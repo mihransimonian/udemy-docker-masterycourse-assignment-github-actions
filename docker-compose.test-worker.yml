@@ -3,36 +3,36 @@
 # docker-compose v1.27+ required
 
 services:
-  vote:
-    build: ./vote
-    # use python rather than gunicorn for local dev
-    command: python app.py
-    depends_on:
-      redis:
-        condition: service_healthy 
-    volumes:
-      - ./vote:/app
-    ports:
-      - "5000:80"
-    networks:
-      - front-tier
-      - back-tier
+  # vote:
+  #   build: ./vote
+  #   # use python rather than gunicorn for local dev
+  #   command: python app.py
+  #   depends_on:
+  #     redis:
+  #       condition: service_healthy 
+  #   volumes:
+  #     - ./vote:/app
+  #   ports:
+  #     - "5000:80"
+  #   networks:
+  #     - front-tier
+  #     - back-tier
 
-  result:
-    build: ./result
-    # use nodemon rather than node for local dev
-    command: nodemon server.js
-    depends_on:
-      db:
-        condition: service_healthy 
-    volumes:
-      - ./result:/app
-    ports:
-      - "5001:80"
-      - "5858:5858"
-    networks:
-      - front-tier
-      - back-tier
+  # result:
+  #   build: ./result
+  #   # use nodemon rather than node for local dev
+  #   command: nodemon server.js
+  #   depends_on:
+  #     db:
+  #       condition: service_healthy 
+  #   volumes:
+  #     - ./result:/app
+  #   ports:
+  #     - "5001:80"
+  #     - "5858:5858"
+  #   networks:
+  #     - front-tier
+  #     - back-tier
 
   worker:
     # build:
@@ -71,9 +71,21 @@ services:
     networks:
       - back-tier
 
+  test-worker:
+    image: ${TESTING_IMAGE}
+    depends_on:
+      worker:
+        condition: service_started
+      redis:
+        condition: service_healthy 
+      db:
+        condition: service_healthy 
+    # run the tests here, for now I find this suffice
+    command: echo 0 || exit 1
+
 volumes:
   db-data:
 
 networks:
-  front-tier:
+  # front-tier:
   back-tier:

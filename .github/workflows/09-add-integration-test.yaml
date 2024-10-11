@@ -10,7 +10,7 @@ on:
 
 jobs:
   build-image-result:
-    if: false # run job true/false
+    if: true # run job true/false
     name: Build Image Result
     runs-on: ubuntu-latest
     permissions:
@@ -51,7 +51,7 @@ jobs:
       - name: Test healthcheck in Docker Compose
         run: |
           export TESTING_IMAGE="${{ github.run_id }}"
-          docker compose -f docker-compose.test-result.yml up --exit-code-from sut
+          docker compose -f docker-compose.test-result.yml up --exit-code-from test-result
 #NEW: (END) ############################################################
       - name: Run Trivy for all CVEs (non-blocking)
         uses: aquasecurity/trivy-action@master
@@ -252,7 +252,7 @@ jobs:
           edit-mode: replace
 
   build-image-worker:
-    if: false # run job true/false
+    if: true # run job true/false
     name: Build Image Worker
     runs-on: ubuntu-latest
     permissions:
@@ -293,7 +293,7 @@ jobs:
       - name: Test healthcheck in Docker Compose
         run: |
           export TESTING_IMAGE="${{ github.run_id }}"
-          docker compose -f docker-compose.test-worker.yml up --exit-code-from sut
+          docker compose -f docker-compose.test-worker.yml up --exit-code-from test-worker
 #NEW: (END) ############################################################
       - name: Run Trivy for all CVEs (non-blocking)
         uses: aquasecurity/trivy-action@master

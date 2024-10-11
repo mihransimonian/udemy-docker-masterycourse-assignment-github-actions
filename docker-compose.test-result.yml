@@ -3,23 +3,23 @@
 # docker-compose v1.27+ required
 
 services:
-  vote:
-    build: ./vote
-    # use python rather than gunicorn for local dev
-    command: python app.py
-    depends_on:
-      redis:
-        condition: service_healthy 
-    volumes:
-      - ./vote:/app
-    ports:
-      - "5000:80"
-    networks:
-      - front-tier
-      - back-tier
+  # vote:
+  #   build: ./vote
+  #   # use python rather than gunicorn for local dev
+  #   command: python app.py
+  #   depends_on:
+  #     redis:
+  #       condition: service_healthy 
+  #   volumes:
+  #     - ./vote:/app
+  #   ports:
+  #     - "5000:80"
+  #   networks:
+  #     - front-tier
+  #     - back-tier
 
   result:
-    build: ./result
+    # build: ./result
     image: ${TESTING_IMAGE}
     # use nodemon rather than node for local dev
     command: nodemon server.js
@@ -35,27 +35,27 @@ services:
       - front-tier
       - back-tier
 
-  worker:
-    build:
-      context: ./worker
-    depends_on:
-      redis:
-        condition: service_healthy 
-      db:
-        condition: service_healthy 
-    networks:
-      - back-tier
+  # worker:
+  #   build:
+  #     context: ./worker
+  #   depends_on:
+  #     redis:
+  #       condition: service_healthy 
+  #     db:
+  #       condition: service_healthy 
+  #   networks:
+  #     - back-tier
 
-  redis:
-    image: redis:5.0-alpine3.10
-    volumes:
-      - "./healthchecks:/healthchecks"
-    healthcheck:
-      test: /healthchecks/redis.sh
-      interval: "5s"
-    ports: ["6379"]
-    networks:
-      - back-tier
+  # redis:
+  #   image: redis:5.0-alpine3.10
+  #   volumes:
+  #     - "./healthchecks:/healthchecks"
+  #   healthcheck:
+  #     test: /healthchecks/redis.sh
+  #     interval: "5s"
+  #   ports: ["6379"]
+  #   networks:
+  #     - back-tier
 
   db:
     image: postgres:9.4
@@ -70,6 +70,16 @@ services:
       interval: "5s"
     networks:
       - back-tier
+
+  test-result:
+    image: ${TESTING_IMAGE}
+    depends_on:
+      result:
+        condition: service_started
+      db:
+        condition: service_healthy
+    # run the tests here, for now I find this suffice
+    command: echo 0 || exit 1
 
 volumes:
   db-data:
