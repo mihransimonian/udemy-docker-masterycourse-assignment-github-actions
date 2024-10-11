@@ -23,7 +23,7 @@ jobs:
       - name: Docker build
         uses: docker/build-push-action@v6
         with:
-          context: ./result/  # added folder of Dockerfile in repo
+          context: ./result  # added folder of Dockerfile in repo
           push: ${{ github.event_name != 'pull_request' }}
           tags: mihransimonian/github-action-result:latest, mihransimonian/github-action-result:01
 
@@ -41,6 +41,6 @@ jobs:
       - name: Docker build
         uses: docker/build-push-action@v6
         with:
-          context: ./vote/  # added folder of Dockerfile in repo
+          context: ./vote  # added folder of Dockerfile in repo
           push: ${{ github.event_name != 'pull_request' }}
           tags: mihransimonian/github-action-vote:latest, mihransimonian/github-action-vote:01
