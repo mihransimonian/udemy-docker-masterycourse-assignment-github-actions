@@ -26,11 +26,10 @@ jobs:
         with:
           context: ./result  # added folder of Dockerfile in repo
           push: ${{ github.event_name != 'pull_request' }}
-          tags: mihransimonian/udemy-docker-masteryassignment-github-actions-img-result:${{ github.ref_name }}, mihransimonian/github-action-result:01
-      - run: echo "branch name "
+          tags: mihransimonian/udemy-docker-masteryassignment-github-actions-result:latest, mihransimonian/udemy-docker-masteryassignment-github-actions-result:${{ github.ref_name }}${{ github.event.repository.updated_at}}"
 
   build-image-vote:
-    if: false # run job true/false
+    if: true # run job true/false
     name: Build Image Vote
     runs-on: ubuntu-latest
     steps:
@@ -46,4 +45,4 @@ jobs:
         with:
           context: ./vote  # added folder of Dockerfile in repo
           push: ${{ github.event_name != 'pull_request' }}
-          tags: mihransimonian/github-action-vote:latest, mihransimonian/github-action-vote:01
+          tags: mihransimonian/udemy-docker-masteryassignment-github-actions-vote:latest, mihransimonian/udemy-docker-masteryassignment-github-actions-vote:${{ github.ref_name }}${{ github.event.repository.updated_at}}"

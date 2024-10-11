@@ -7,7 +7,7 @@ env:
 
 jobs:
   echo_the_folder:
-    if: true # run job true/false
+    if: false # run job true/false
     runs-on: ubuntu-latest
     steps:
       # - name: Split branch name
