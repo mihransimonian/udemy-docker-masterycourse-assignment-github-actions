@@ -74,12 +74,14 @@ services:
   test-worker:
     image: ${TESTING_IMAGE}
     depends_on:
-      worker:
-        condition: service_started
       redis:
         condition: service_healthy 
       db:
         condition: service_healthy 
+      worker:
+        condition: service_started
+    networks:
+      - back-tier
     # run the tests here, for now I find this suffice
     command: echo 0 || exit 1
 
