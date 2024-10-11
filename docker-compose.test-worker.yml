@@ -75,7 +75,7 @@ services:
     image: ${TESTING_IMAGE}
     depends_on:
       worker:
-        condition: service_healthy
+        condition: service_started
       redis:
         condition: service_healthy 
       db:
@@ -83,7 +83,7 @@ services:
     networks:
       - back-tier
     # run the tests here, for now I find this suffice
-    command: echo 0 || exit 1
+    command: exit 1
 
 volumes:
   db-data:
