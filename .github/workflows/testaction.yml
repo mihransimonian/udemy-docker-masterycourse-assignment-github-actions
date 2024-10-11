@@ -2,11 +2,6 @@ name: 01 Basic Docker Build
 run-name: testing-actions
 on: [push]
 
-env:
-  REPONAME: ${{ vars.GITHUB_REPOSITORY }}
-  BRANCHNAME: ${{ vars.GITHUB_REF_NAME }}
-  GITHUB_USER: ${{ vars.GITHUB_REPOSITORY_OWNER }}
-
 jobs:
   echo_the_folder:
     runs-on: ubuntu-latest
@@ -15,8 +10,8 @@ jobs:
         uses: actions/checkout@v4
       - run: ls
       - run: ls ./result
-      - run: echo ${{ env.REPONAME }}
-      - run: echo ${{ env.BRANCHNAME }}
-      - run: echo ${{ env.GITHUB_USER }}
-      - run: echo "fragment=${env.BRANCHNAME##*/}" >> $GITHUB_OUTPUT
-      - run: echo $GITHUB_OUTPUT
+      - run: echo ${{ vars.GITHUB_REPOSITORY }}
+      - run: echo ${{ vars.GITHUB_REF_NAME }}
+      - run: echo ${{ vars.GITHUB_REPOSITORY_OWNER }}
+      # - run: echo "fragment=${env.BRANCHNAME##*/}" >> $GITHUB_OUTPUT
+      # - run: echo $GITHUB_OUTPUT
