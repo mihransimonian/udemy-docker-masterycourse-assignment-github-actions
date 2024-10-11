@@ -3,10 +3,11 @@ run-name: testing-actions
 on: [push]
 
 env:
-  THISREPONAME: udemy-docker-masterycourse-assignment-github-actions
+  thisreponame: udemy-docker-masterycourse-assignment-github-actions
 
 jobs:
   echo_the_folder:
+    if: true # run job true/false
     runs-on: ubuntu-latest
     steps:
       # - name: Split branch name
@@ -23,7 +24,8 @@ jobs:
       - run: echo "fullrepo name ${{ github.repository }}"
       - run: echo "branch name ${{ github.ref_name }}"
       - run: echo "owner name ${{ github.repository_owner }}"
-      - run: echo "thisrepo ${{ env.THISREPONAME }}"
+      - run: echo "thisrepo ${{ env.thisreponame }}"
+      - run: echo "${{ github.event.repository.updated_at}}"
 
       # - run: echo "fragment=${env.BRANCHNAME##*/}" >> $GITHUB_OUTPUT
       # - run: echo $GITHUB_OUTPUT
