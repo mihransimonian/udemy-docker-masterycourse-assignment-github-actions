@@ -8,10 +8,10 @@ jobs:
     steps:
       - name: Split branch name
         env:
-          BRANCH: ${{ github.ref_name }}
-          reponame: ${{ github.ref_name }}
+          repo-namewithowner: ${{ github.repository }}
+          repo-nameonly: ${{ github.repository }}
         id: split
-        run: echo "fragment=${BRANCH##*/}" >> $reponame
+        run: echo "fragment=${repo-namewithowner##*/}" >> $repo-nameonly
       - name: set up git repo
         uses: actions/checkout@v4
       - run: ls
@@ -19,7 +19,7 @@ jobs:
       - run: echo "fullrepo name ${{ github.repository }}"
       - run: echo "branch name ${{ github.ref_name }}"
       - run: echo "owner name ${{ github.repository_owner }}"
-      - run: echo "${{ env.reponame }}"
+      - run: echo repo-nameonly "${{ env.repo-nameonly }}"
 
       # - run: echo "fragment=${env.BRANCHNAME##*/}" >> $GITHUB_OUTPUT
       # - run: echo $GITHUB_OUTPUT
