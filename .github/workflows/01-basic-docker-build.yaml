@@ -9,11 +9,11 @@ on:
   pull_request:
 
 jobs:
-  build-image:
-    name: Build Image
+  build-image-result:
+    name: Build Image Result
     runs-on: ubuntu-latest
     steps:
-            
+
       - name: Login to Docker Hub
         uses: docker/login-action@v3
         with:
@@ -23,5 +23,24 @@ jobs:
       - name: Docker build
         uses: docker/build-push-action@v6
         with:
+          context: ./result/  # added folder of Dockerfile in repo
           push: ${{ github.event_name != 'pull_request' }}
-          tags: mihransimonian/docker-ci-automation:latest, mihransimonian/docker-ci-automation:01
+          tags: mihransimonian/github-action-result:latest, mihransimonian/github-action-result:01
+
+  build-image-vote:
+    name: Build Image Vote
+    runs-on: ubuntu-latest
+    steps:
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      
+      - name: Docker build
+        uses: docker/build-push-action@v6
+        with:
+          context: ./vote/  # added folder of Dockerfile in repo
+          push: ${{ github.event_name != 'pull_request' }}
+          tags: mihransimonian/github-action-vote:latest, mihransimonian/github-action-vote:01
