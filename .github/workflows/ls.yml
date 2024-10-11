@@ -6,6 +6,5 @@ jobs:
   echo_the_folder:
     runs-on: ubuntu-latest
     steps:
-      - run: ls ${github.repository}
-      - run: ls ${github.workspace}
       - run: pwd
+      - run: ls ${github.workspace}
