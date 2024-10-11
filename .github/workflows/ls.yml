@@ -6,4 +6,5 @@ jobs:
   echo_the_folder:
     runs-on: ubuntu-latest
     steps:
-      - run: ls
+      - run: ls ${{ github.workspace }}
+      - run: ls ${{ github.workspace }}+/result
