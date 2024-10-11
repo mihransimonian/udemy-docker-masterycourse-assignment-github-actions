@@ -11,8 +11,8 @@ jobs:
       - run: ls
       - run: ls ./result
       - run: echo "This is repo ${{ github.repository }}"
-      - run: echo "${{ vars.GITHUB_REPOSITORY }}"
-      - run: echo "${{ vars.GITHUB_REF_NAME }}"
-      - run: echo "${{ vars.GITHUB_REPOSITORY_OWNER }}"
+      - run: echo "${{ github.repository }}"
+      - run: echo "${{ github.ref_name }}"
+      - run: echo "${{ github.repository_owner }}"
       # - run: echo "fragment=${env.BRANCHNAME##*/}" >> $GITHUB_OUTPUT
       # - run: echo $GITHUB_OUTPUT
