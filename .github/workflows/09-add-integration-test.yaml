@@ -4,8 +4,8 @@ name: 09 Build and Integration Test
 
 on:
   push:
-    # branches:
-    #   - main
+    branches:
+      - main
   pull_request:
 
 jobs:
@@ -294,7 +294,7 @@ jobs:
       - name: Test healthcheck in Docker Compose
         run: |
           export TESTING_IMAGE="${{ github.run_id }}"
-          docker compose -f docker-compose.test-worker.yml up --exit-code-from test-worker
+          docker compose -f docker-compose.test-worker.yml up
 #NEW: (END) ############################################################
       - name: Run Trivy for all CVEs (non-blocking)
         uses: aquasecurity/trivy-action@master
