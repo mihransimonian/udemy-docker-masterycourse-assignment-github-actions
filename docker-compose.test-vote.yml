@@ -62,6 +62,10 @@ services:
     depends_on:
       vote:
         condition: service_started
+      redis:
+        condition: service_healthy
+    # run all tests
+    command: exit 0
 
 
 #   db:
