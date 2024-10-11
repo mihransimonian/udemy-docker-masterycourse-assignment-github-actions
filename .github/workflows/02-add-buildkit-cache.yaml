@@ -3,32 +3,87 @@ name: 02 Build with BuildKit Cache
 
 on:
   push:
-    branches:
-      - main
+    # branches:
+    #   - main
   pull_request:
 
 jobs:
-  build-image:
-    name: Build Image
+  build-image-result:
+    if: true # run job true/false
+    name: Build Image Result
     runs-on: ubuntu-latest
     steps:
-
+      - name: Set up git repo
+        uses: actions/checkout@v4
 #NEW: (START) ##########################################################
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 #NEW: (END) ############################################################
-            
       - name: Login to Docker Hub
         uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
-      
       - name: Docker build
         uses: docker/build-push-action@v6
         with:
+          context: ./result  # added folder of Dockerfile in repo
           push: ${{ github.event_name != 'pull_request' }}
-          tags: bretfisher/docker-ci-automation:02
+          tags: mihransimonian/udemy-dockermastery-assignment-github-actions-result:latest, mihransimonian/udemy-dockermastery-assignment-github-actions-result:02
+#NEW: (START) ##########################################################
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+#NEW: (END) ############################################################
+
+  build-image-vote:
+    if: true # run job true/false
+    name: Build Image Vote
+    runs-on: ubuntu-latest
+    steps:
+      - name: Set up git repo
+        uses: actions/checkout@v4
+#NEW: (START) ##########################################################
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+#NEW: (END) ############################################################
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      - name: Docker build
+        uses: docker/build-push-action@v6
+        with:
+          context: ./vote  # added folder of Dockerfile in repo
+          push: ${{ github.event_name != 'pull_request' }}
+          tags: mihransimonian/udemy-dockermastery-assignment-github-actions-vote:latest, mihransimonian/udemy-dockermastery-assignment-github-actions-vote:02
+#NEW: (START) ##########################################################
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+#NEW: (END) ############################################################
+
+  build-image-worker:
+    if: true # run job true/false
+    name: Build Image Worker
+    runs-on: ubuntu-latest
+    steps:
+      - name: Set up git repo
+        uses: actions/checkout@v4
+#NEW: (START) ##########################################################
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+#NEW: (END) ############################################################
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      - name: Docker build
+        uses: docker/build-push-action@v6
+        with:
+          context: ./worker  # added folder of Dockerfile in repo
+          push: ${{ github.event_name != 'pull_request' }}
+          tags: mihransimonian/udemy-dockermastery-assignment-github-actions-worker:latest, mihransimonian/udemy-dockermastery-assignment-github-actions-worker:02
 #NEW: (START) ##########################################################
           cache-from: type=gha
           cache-to: type=gha,mode=max
