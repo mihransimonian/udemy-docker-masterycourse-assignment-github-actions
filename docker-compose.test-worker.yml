@@ -83,7 +83,7 @@ services:
     networks:
       - back-tier
     # run the tests here, for now I find this suffice
-    command: docker compose down
+    command: docker compose stop
 
 volumes:
   db-data:
