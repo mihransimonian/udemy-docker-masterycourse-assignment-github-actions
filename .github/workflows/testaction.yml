@@ -3,8 +3,8 @@ run-name: testing-actions
 on: [push]
 
 env:
-  REPONAME: ${{ github.repository }}
-  BRANCHNAME: ${{ github.ref_name }}
+  REPONAME: ${{ vars.GITHUB_REPOSITORY }}
+  BRANCHNAME: ${{ GITHUB_REF_NAME }}
   GITHUB_USER: ${{ github.repository_owner }}
 
 jobs:
@@ -18,5 +18,5 @@ jobs:
       - run: echo ${{ REPONAME }}
       - run: echo ${{ BRANCHNAME }}
       - run: echo ${{ GITHUB_USER }}
-      - run: echo ${{ REPONAME 15:}}
+      - run: echo ${{ REPONAME:${{GITHUB_USER}}}}
 
