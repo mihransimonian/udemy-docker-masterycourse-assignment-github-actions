@@ -10,7 +10,7 @@ on:
 
 jobs:
   build-image-result:
-    if: true # run job true/false
+    if: false # run job true/false
     name: Build Image Result
     runs-on: ubuntu-latest
     permissions:
@@ -252,7 +252,7 @@ jobs:
           edit-mode: replace
 
   build-image-worker:
-    if: true # run job true/false
+    if: false # run job true/false
     name: Build Image Worker
     runs-on: ubuntu-latest
     permissions:

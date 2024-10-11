@@ -19,32 +19,32 @@ services:
       - front-tier
       - back-tier
 
-  result:
-    build: ./result
-    # use nodemon rather than node for local dev
-    command: nodemon server.js
-    depends_on:
-      db:
-        condition: service_healthy 
-    volumes:
-      - ./result:/app
-    ports:
-      - "5001:80"
-      - "5858:5858"
-    networks:
-      - front-tier
-      - back-tier
+  # result:
+  #   build: ./result
+  #   # use nodemon rather than node for local dev
+  #   command: nodemon server.js
+  #   depends_on:
+  #     db:
+  #       condition: service_healthy 
+  #   volumes:
+  #     - ./result:/app
+  #   ports:
+  #     - "5001:80"
+  #     - "5858:5858"
+  #   networks:
+  #     - front-tier
+  #     - back-tier
 
-  worker:
-    build:
-      context: ./worker
-    depends_on:
-      redis:
-        condition: service_healthy 
-      db:
-        condition: service_healthy 
-    networks:
-      - back-tier
+  # worker:
+  #   build:
+  #     context: ./worker
+  #   depends_on:
+  #     redis:
+  #       condition: service_healthy 
+  #     db:
+  #       condition: service_healthy 
+  #   networks:
+  #     - back-tier
 
   redis:
     image: redis:5.0-alpine3.10
@@ -57,22 +57,29 @@ services:
     networks:
       - back-tier
 
-  db:
-    image: postgres:9.4
-    environment:
-      POSTGRES_USER: "postgres"
-      POSTGRES_PASSWORD: "postgres"
-    volumes:
-      - "db-data:/var/lib/postgresql/data"
-      - "./healthchecks:/healthchecks"
-    healthcheck:
-      test: /healthchecks/postgres.sh
-      interval: "5s"
-    networks:
-      - back-tier
+  test-vote:
+    image: ${TESTING_IMAGE}
+    depends_on:
+      vote:
+        condition: service_started
 
-volumes:
-  db-data:
+
+#   db:
+#     image: postgres:9.4
+#     environment:
+#       POSTGRES_USER: "postgres"
+#       POSTGRES_PASSWORD: "postgres"
+#     volumes:
+#       - "db-data:/var/lib/postgresql/data"
+#       - "./healthchecks:/healthchecks"
+#     healthcheck:
+#       test: /healthchecks/postgres.sh
+#       interval: "5s"
+#     networks:
+#       - back-tier
+
+# volumes:
+#   db-data:
 
 networks:
   front-tier:
