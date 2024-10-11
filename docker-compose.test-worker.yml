@@ -83,7 +83,7 @@ services:
     networks:
       - back-tier
     # run the tests here, for now I find this suffice
-    command: return 0 # Microsoft.Net code
+    command: stop # Microsoft.Net code
 
 volumes:
   db-data:
