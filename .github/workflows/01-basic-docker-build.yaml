@@ -21,12 +21,16 @@ jobs:
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
+      - name: Set current date as env variable
+        run: echo "NOW=$(date +'%Y%m%dT%H%M%S')" >> $GITHUB_ENV
+      - name: Echo current date
+        run: echo $NOW # Gives "20221211T014220"
       - name: Docker build
         uses: docker/build-push-action@v6
         with:
           context: ./result  # added folder of Dockerfile in repo
           push: ${{ github.event_name != 'pull_request' }}
-          tags: mihransimonian/udemy-docker-masteryassignment-github-actions-result:latest, mihransimonian/udemy-docker-masteryassignment-github-actions-result:${{ github.ref_name }}${{ github.event.repository.updated_at}}"
+          tags: mihransimonian/udemy-docker-masteryassignment-github-actions-result:latest, mihransimonian/udemy-docker-masteryassignment-github-actions-result:${{ github.ref_name }}-$NOW"
 
   build-image-vote:
     if: true # run job true/false
@@ -40,9 +44,13 @@ jobs:
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
+      - name: Set current date as env variable
+        run: echo "NOW=$(date +'%Y%m%dT%H%M%S')" >> $GITHUB_ENV
+      - name: Echo current date
+        run: echo $NOW # Gives "20221211T014220"
       - name: Docker build
         uses: docker/build-push-action@v6
         with:
           context: ./vote  # added folder of Dockerfile in repo
           push: ${{ github.event_name != 'pull_request' }}
-          tags: mihransimonian/udemy-docker-masteryassignment-github-actions-vote:latest, mihransimonian/udemy-docker-masteryassignment-github-actions-vote:${{ github.ref_name }}${{ github.event.repository.updated_at}}"
+          tags: mihransimonian/udemy-docker-masteryassignment-github-actions-vote:latest, mihransimonian/udemy-docker-masteryassignment-github-actions-vote:${{ github.ref_name }}${{ github.event.repository.updated_at}}-$NOW"
