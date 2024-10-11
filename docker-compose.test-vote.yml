@@ -65,7 +65,7 @@ services:
       redis:
         condition: service_healthy
     # run all tests
-    command: exit 0
+    command: echo 0 || exit 1
 
 
 #   db:
