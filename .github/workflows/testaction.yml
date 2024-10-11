@@ -18,7 +18,7 @@ jobs:
       - run: echo "fullrepo name ${{ github.repository }}"
       - run: echo "branch name ${{ github.ref_name }}"
       - run: echo "owner name ${{ github.repository_owner }}"
-      - run: echo "${{ split.reponame }}"
+      - run: echo "${{ env.reponame }}"
 
       # - run: echo "fragment=${env.BRANCHNAME##*/}" >> $GITHUB_OUTPUT
       # - run: echo $GITHUB_OUTPUT
