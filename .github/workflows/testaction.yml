@@ -6,13 +6,19 @@ jobs:
   echo_the_folder:
     runs-on: ubuntu-latest
     steps:
+      - name: Split branch name
+        env:
+          BRANCH: ${{ github.ref_name }}
+        id: split
+        run: echo "fragment=${BRANCH##*/}" >> $reponame
       - name: set up git repo
         uses: actions/checkout@v4
       - run: ls
       - run: ls ./result
-      - run: echo "This is repo ${{ github.repository }}"
-      - run: echo "${{ github.repository }}"
-      - run: echo "${{ github.ref_name }}"
-      - run: echo "${{ github.repository_owner }}"
+      - run: echo "fullrepo name ${{ github.repository }}"
+      - run: echo "branch name ${{ github.ref_name }}"
+      - run: echo "owner name ${{ github.repository_owner }}"
+      - run: echo "${{ split.reponame }}"
+
       # - run: echo "fragment=${env.BRANCHNAME##*/}" >> $GITHUB_OUTPUT
       # - run: echo $GITHUB_OUTPUT
