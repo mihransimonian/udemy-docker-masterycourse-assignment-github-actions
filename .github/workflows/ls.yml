@@ -1,0 +1,9 @@
+name: 01 Basic Docker Build
+run-name: ${{ github.actor }} does an ls
+on: [push]
+
+jobs:
+  echo_the_folder:
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo ls
