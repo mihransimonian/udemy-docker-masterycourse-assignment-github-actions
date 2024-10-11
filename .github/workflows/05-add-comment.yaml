@@ -3,8 +3,8 @@ name: 05 Build and Comment
 
 on:
   push:
-    branches:
-      - main
+    # branches:
+    #   - main
   pull_request:
 
 jobs:
