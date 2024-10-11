@@ -2,17 +2,20 @@ name: 01 Basic Docker Build
 run-name: testing-actions
 on: [push]
 
+env:
+  THISREPONAME: udemy-docker-masterycourse-assignment-github-actions
+
 jobs:
   echo_the_folder:
     runs-on: ubuntu-latest
     steps:
-      - name: Split branch name
-        env:
-          repo-namewithowner: ${{ github.repository }}
-          repo-nameonly: ${{ github.repository }}
-        id: split
-        run: export repo-nameonly=${repo-namewithowner##*/}
-        # run: echo "${repo-namewithowner##*/}" >> $repo-nameonly
+      # - name: Split branch name
+      #   env:
+      #     repo-namewithowner: ${{ github.repository }}
+      #     repo-nameonly: ${{ github.repository }}
+      #   id: split
+      #   run: export repo-nameonly=${repo-namewithowner##*/}
+      #   # run: echo "${repo-namewithowner##*/}" >> $repo-nameonly
       - name: set up git repo
         uses: actions/checkout@v4
       - run: ls
@@ -20,7 +23,7 @@ jobs:
       - run: echo "fullrepo name ${{ github.repository }}"
       - run: echo "branch name ${{ github.ref_name }}"
       - run: echo "owner name ${{ github.repository_owner }}"
-      - run: echo repo-nameonly "${{ env.repo-nameonly }}"
+      - run: echo "thisrepo ${{ env.THISREPONAME }}"
 
       # - run: echo "fragment=${env.BRANCHNAME##*/}" >> $GITHUB_OUTPUT
       # - run: echo $GITHUB_OUTPUT
