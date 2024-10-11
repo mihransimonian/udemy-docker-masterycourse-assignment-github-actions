@@ -283,9 +283,10 @@ jobs:
           cache-to: type=gha,mode=max
           platforms: linux/amd64
       # for simple tests (npm test, etc.) just run a local image in docker
-      - name: Unit Testing in Docker
-        run: |
-          docker run --rm ${{ github.run_id }} echo "run test commands here"
+      # skipped because image requires db
+      # - name: Unit Testing in Docker
+      #   run: |
+      #     docker run --rm ${{ github.run_id }} echo "run test commands here"
 #NEW: (START) ############################################################  
         # for more advanced tests, use docker compose with `depends_on`
           # NOTE: GHA and other CIs can also run dependency containers on their own
