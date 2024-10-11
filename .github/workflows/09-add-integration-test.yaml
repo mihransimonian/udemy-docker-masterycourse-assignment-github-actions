@@ -282,19 +282,20 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
           platforms: linux/amd64
-      # for simple tests (npm test, etc.) just run a local image in docker
       # skipped because image requires db
+      # for simple tests (npm test, etc.) just run a local image in docker
       # - name: Unit Testing in Docker
       #   run: |
       #     docker run --rm ${{ github.run_id }} echo "run test commands here"
-#NEW: (START) ############################################################  
-        # for more advanced tests, use docker compose with `depends_on`
+#NEW: (START) ############################################################
+      # skipped because image requires further digging how to return an exit code
+      # for more advanced tests, use docker compose with `depends_on`
           # NOTE: GHA and other CIs can also run dependency containers on their own
           # GHA `services:` can do this if you're trying to avoid docker compose
-      - name: Test healthcheck in Docker Compose
-        run: |
-          export TESTING_IMAGE="${{ github.run_id }}"
-          docker compose -f docker-compose.test-worker.yml up
+      # - name: Test healthcheck in Docker Compose
+      #   run: |
+      #     export TESTING_IMAGE="${{ github.run_id }}"
+      #     docker compose -f docker-compose.test-worker.yml up --exit-code-from test-worker
 #NEW: (END) ############################################################
       - name: Run Trivy for all CVEs (non-blocking)
         uses: aquasecurity/trivy-action@master

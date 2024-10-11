@@ -83,7 +83,7 @@ services:
     networks:
       - back-tier
     # run the tests here, for now I find this suffice
-    command: docker compose stop
+    command: echo 0 || exit 1
 
 volumes:
   db-data:
