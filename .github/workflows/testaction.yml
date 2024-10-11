@@ -10,8 +10,8 @@ jobs:
         uses: actions/checkout@v4
       - run: ls
       - run: ls ./result
-      - run: echo ${{ vars.GITHUB_REPOSITORY }}
-      - run: echo ${{ vars.GITHUB_REF_NAME }}
-      - run: echo ${{ vars.GITHUB_REPOSITORY_OWNER }}
+      - run: echo "${{ vars.GITHUB_REPOSITORY }}"
+      - run: echo "${{ vars.GITHUB_REF_NAME }}"
+      - run: echo "${{ vars.GITHUB_REPOSITORY_OWNER }}"
       # - run: echo "fragment=${env.BRANCHNAME##*/}" >> $GITHUB_OUTPUT
       # - run: echo $GITHUB_OUTPUT
