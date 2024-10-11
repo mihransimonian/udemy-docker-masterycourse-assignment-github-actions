@@ -6,7 +6,7 @@ jobs:
   echo_the_folder:
     runs-on: ubuntu-latest
     steps:
-      - run: pwd
-      - name: List files in the repository
-        run: |
-          ls ${{ github.workspace }}
+      - name: set up git repo
+        uses: actions/checkout@v4
+      - run: ls
+      - run: ls/result
