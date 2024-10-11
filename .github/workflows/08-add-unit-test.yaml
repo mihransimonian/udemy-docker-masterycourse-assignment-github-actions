@@ -1,10 +1,10 @@
 ---
-name: 07 Build and Scan + Report
+name: 08 Build and Unit Test
 
 on:
   push:
-    branches:
-      - main
+    # branches:
+    #   - main
   pull_request:
 
 jobs:
@@ -14,10 +14,8 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       pull-requests: write # needed to create and update comments in PRs
-#NEW: (START) ##########################################################
       contents: read # for actions/checkout to fetch code
       security-events: write # for github/codeql-action/upload-sarif to upload SARIF results
-#NEW: (END) ############################################################
     steps:
       - name: Set up git repo
         uses: actions/checkout@v4
@@ -41,6 +39,12 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
           platforms: linux/amd64
+#NEW: (START) ##########################################################
+      # for simple tests (npm test, etc.) just run a local image in docker
+      - name: Unit Testing in Docker
+        run: |
+          docker run --rm ${{ github.run_id }} echo "run test commands here"
+#NEW: (END) ############################################################
       - name: Run Trivy for all CVEs (non-blocking)
         uses: aquasecurity/trivy-action@master
         with:
@@ -55,12 +59,11 @@ jobs:
           flavor: |
             latest=false
           tags: |
-            type=raw,value=07
+            type=raw,value=08
             type=raw,value=latest,enable=${{ endsWith(github.ref, github.event.repository.default_branch) }}
             type=ref,event=pr
             type=ref,event=branch
             type=semver,pattern={{version}}
-#NEW: (START) ##########################################################
       - name: Run Trivy for HIGH,CRITICAL CVEs and report (non-block)
         uses: aquasecurity/trivy-action@master
         with:
@@ -76,7 +79,6 @@ jobs:
         if: always()
         with:
           sarif_file: 'trivy-results-image-result.sarif'
-#NEW: (END) ############################################################
       - name: Docker Build and Push to Docker Hub # renewed name
         uses: docker/build-push-action@v6
         with:
@@ -126,10 +128,8 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       pull-requests: write # needed to create and update comments in PRs
-#NEW: (START) ##########################################################
       contents: read # for actions/checkout to fetch code
       security-events: write # for github/codeql-action/upload-sarif to upload SARIF results
-#NEW: (END) ############################################################
     steps:
       - name: Set up git repo
         uses: actions/checkout@v4
@@ -153,6 +153,12 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
           platforms: linux/amd64
+#NEW: (START) ##########################################################
+      # for simple tests (npm test, etc.) just run a local image in docker
+      - name: Unit Testing in Docker
+        run: |
+          docker run --rm ${{ github.run_id }} echo "run test commands here"
+#NEW: (END) ############################################################
       - name: Run Trivy for all CVEs (non-blocking)
         uses: aquasecurity/trivy-action@master
         with:
@@ -167,12 +173,11 @@ jobs:
           flavor: |
             latest=false
           tags: |
-            type=raw,value=07
+            type=raw,value=08
             type=raw,value=latest,enable=${{ endsWith(github.ref, github.event.repository.default_branch) }}
             type=ref,event=pr
             type=ref,event=branch
             type=semver,pattern={{version}}
-#NEW: (START) ##########################################################
       - name: Run Trivy for HIGH,CRITICAL CVEs and report (non-block)
         uses: aquasecurity/trivy-action@master
         with:
@@ -188,7 +193,6 @@ jobs:
         if: always()
         with:
           sarif_file: 'trivy-results-image-vote.sarif'
-#NEW: (END) ############################################################
       - name: Docker Build and Push to Docker Hub # renewed name
         uses: docker/build-push-action@v6
         with:
@@ -238,10 +242,8 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       pull-requests: write # needed to create and update comments in PRs
-#NEW: (START) ##########################################################
       contents: read # for actions/checkout to fetch code
       security-events: write # for github/codeql-action/upload-sarif to upload SARIF results
-#NEW: (END) ############################################################
     steps:
       - name: Set up git repo
         uses: actions/checkout@v4
@@ -265,6 +267,12 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
           platforms: linux/amd64
+#NEW: (START) ##########################################################
+      # for simple tests (npm test, etc.) just run a local image in docker
+      - name: Unit Testing in Docker
+        run: |
+          docker run --rm ${{ github.run_id }} echo "run test commands here"
+#NEW: (END) ############################################################
       - name: Run Trivy for all CVEs (non-blocking)
         uses: aquasecurity/trivy-action@master
         with:
@@ -279,12 +287,11 @@ jobs:
           flavor: |
             latest=false
           tags: |
-            type=raw,value=07
+            type=raw,value=08
             type=raw,value=latest,enable=${{ endsWith(github.ref, github.event.repository.default_branch) }}
             type=ref,event=pr
             type=ref,event=branch
             type=semver,pattern={{version}}
-#NEW: (START) ##########################################################
       - name: Run Trivy for HIGH,CRITICAL CVEs and report (non-block)
         uses: aquasecurity/trivy-action@master
         with:
@@ -300,7 +307,6 @@ jobs:
         if: always()
         with:
           sarif_file: 'trivy-results-image-worker.sarif'
-#NEW: (END) ############################################################
       - name: Docker Build and Push to Docker Hub # renewed name
         uses: docker/build-push-action@v6
         with:
