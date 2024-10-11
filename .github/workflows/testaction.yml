@@ -1,6 +1,11 @@
 name: 01 Basic Docker Build
 run-name: testing-actions
-on: [push]
+
+on:
+  push:
+    branches:
+      - main
+# on: [push]
 
 env:
   thisreponame: udemy-docker-masterycourse-assignment-github-actions
