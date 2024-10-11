@@ -46,3 +46,23 @@ jobs:
           context: ./vote  # added folder of Dockerfile in repo
           push: ${{ github.event_name != 'pull_request' }}
           tags: mihransimonian/udemy-dockermastery-assignment-github-actions-vote:latest, mihransimonian/udemy-dockermastery-assignment-github-actions-vote:01
+
+
+  build-image-worker:
+    if: true # run job true/false
+    name: Build Image Worker
+    runs-on: ubuntu-latest
+    steps:
+      - name: Set up git repo
+        uses: actions/checkout@v4
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      - name: Docker build
+        uses: docker/build-push-action@v6
+        with:
+          context: ./worker  # added folder of Dockerfile in repo
+          push: ${{ github.event_name != 'pull_request' }}
+          tags: mihransimonian/udemy-dockermastery-assignment-github-actions-worker:latest, mihransimonian/udemy-dockermastery-assignment-github-actions-worker:01
