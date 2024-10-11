@@ -7,6 +7,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - run: pwd
-      - name: listme
+      - name: List files in the repository
         run: |
-          ls ${{github.workspace}}
+          ls ${{ github.workspace }}
