@@ -9,6 +9,7 @@ jobs:
       - name: Split branch name
         env:
           BRANCH: ${{ github.ref_name }}
+          reponame: ${{ github.ref_name }}
         id: split
         run: echo "fragment=${BRANCH##*/}" >> $reponame
       - name: set up git repo
