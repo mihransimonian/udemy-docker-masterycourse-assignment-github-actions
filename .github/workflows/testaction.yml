@@ -4,8 +4,8 @@ on: [push]
 
 env:
   REPONAME: ${{ vars.GITHUB_REPOSITORY }}
-  BRANCHNAME: ${{ GITHUB_REF_NAME }}
-  GITHUB_USER: ${{ github.repository_owner }}
+  BRANCHNAME: ${{ vars.GITHUB_REF_NAME }}
+  GITHUB_USER: ${{ vars.GITHUB_REPOSITORY_OWNER }}
 
 jobs:
   echo_the_folder:
@@ -15,8 +15,8 @@ jobs:
         uses: actions/checkout@v4
       - run: ls
       - run: ls ./result
-      - run: echo ${{ REPONAME }}
-      - run: echo ${{ BRANCHNAME }}
-      - run: echo ${{ GITHUB_USER }}
-      - run: echo ${{ REPONAME:${{GITHUB_USER}}}}
+      - run: echo ${{ env.REPONAME }}
+      - run: echo ${{ env.BRANCHNAME }}
+      - run: echo ${{ env.GITHUB_USER }}
+      - run: echo ${{ env.REPONAME:${{env.GITHUB_USER}}}}
 
