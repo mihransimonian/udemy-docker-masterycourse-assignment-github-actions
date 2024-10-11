@@ -11,7 +11,8 @@ jobs:
           repo-namewithowner: ${{ github.repository }}
           repo-nameonly: ${{ github.repository }}
         id: split
-        run: echo "fragment=${repo-namewithowner##*/}" >> $repo-nameonly
+        run: export $repo-nameonly=${repo-namewithowner##*/}
+        # run: echo "${repo-namewithowner##*/}" >> $repo-nameonly
       - name: set up git repo
         uses: actions/checkout@v4
       - run: ls
