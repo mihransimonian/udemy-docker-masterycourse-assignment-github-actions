@@ -1,10 +1,11 @@
 ---
-name: 08 Build and Unit Test
+name: 09 Build and Integration Test
+# for this file I had to make docker-compose.test.yaml files in the root of the repository
 
 on:
   push:
-    branches:
-      - main
+    # branches:
+    #   - main
   pull_request:
 
 jobs:
@@ -39,11 +40,18 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
           platforms: linux/amd64
-#NEW: (START) ##########################################################
       # for simple tests (npm test, etc.) just run a local image in docker
       - name: Unit Testing in Docker
         run: |
           docker run --rm ${{ github.run_id }} echo "run test commands here"
+#NEW: (START) ############################################################  
+        # for more advanced tests, use docker compose with `depends_on`
+          # NOTE: GHA and other CIs can also run dependency containers on their own
+          # GHA `services:` can do this if you're trying to avoid docker compose
+      - name: Test healthcheck in Docker Compose
+        run: |
+          export TESTING_IMAGE="${{ github.run_id }}"
+          docker compose -f docker-compose.test-result.yml up --exit-code-from sut
 #NEW: (END) ############################################################
       - name: Run Trivy for all CVEs (non-blocking)
         uses: aquasecurity/trivy-action@master
@@ -153,11 +161,18 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
           platforms: linux/amd64
-#NEW: (START) ##########################################################
       # for simple tests (npm test, etc.) just run a local image in docker
       - name: Unit Testing in Docker
         run: |
           docker run --rm ${{ github.run_id }} echo "run test commands here"
+#NEW: (START) ############################################################  
+        # for more advanced tests, use docker compose with `depends_on`
+          # NOTE: GHA and other CIs can also run dependency containers on their own
+          # GHA `services:` can do this if you're trying to avoid docker compose
+      - name: Test healthcheck in Docker Compose
+        run: |
+          export TESTING_IMAGE="${{ github.run_id }}"
+          docker compose -f docker-compose.test-vote.yml up --exit-code-from sut
 #NEW: (END) ############################################################
       - name: Run Trivy for all CVEs (non-blocking)
         uses: aquasecurity/trivy-action@master
@@ -267,11 +282,18 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
           platforms: linux/amd64
-#NEW: (START) ##########################################################
       # for simple tests (npm test, etc.) just run a local image in docker
       - name: Unit Testing in Docker
         run: |
           docker run --rm ${{ github.run_id }} echo "run test commands here"
+#NEW: (START) ############################################################  
+        # for more advanced tests, use docker compose with `depends_on`
+          # NOTE: GHA and other CIs can also run dependency containers on their own
+          # GHA `services:` can do this if you're trying to avoid docker compose
+      - name: Test healthcheck in Docker Compose
+        run: |
+          export TESTING_IMAGE="${{ github.run_id }}"
+          docker compose -f docker-compose.test-worker.yml up --exit-code-from sut
 #NEW: (END) ############################################################
       - name: Run Trivy for all CVEs (non-blocking)
         uses: aquasecurity/trivy-action@master
