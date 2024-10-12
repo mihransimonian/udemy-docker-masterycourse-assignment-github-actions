@@ -30,12 +30,14 @@ jobs:
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 #NEW: (START) ############################################################
       - name: Login to ghcr.io registry
+        if: false # paid plan
         uses: docker/login-action@v3
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
       - name: Build and Push to GHCR
+        if: false # paid plan
         uses: docker/build-push-action@v6
         with:
           context: ./result  # added folder of Dockerfile in repo
@@ -53,6 +55,7 @@ jobs:
             --no-lb
             --k3s-arg "--no-deploy=traefik,servicelb,metrics-server@server:*"
       - name: Smoke test deployment in k3d Kubernetes
+        if: false # paid plan
         run: |
           kubectl create secret docker-registry regcred \
             --docker-server=https://ghcr.io \
@@ -184,12 +187,14 @@ jobs:
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 #NEW: (START) ############################################################
       - name: Login to ghcr.io registry
+        if: false # paid plan
         uses: docker/login-action@v3
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
       - name: Build and Push to GHCR
+        if: false # paid plan
         uses: docker/build-push-action@v6
         with:
           context: ./vote  # added folder of Dockerfile in repo
@@ -207,6 +212,7 @@ jobs:
             --no-lb
             --k3s-arg "--no-deploy=traefik,servicelb,metrics-server@server:*"
       - name: Smoke test deployment in k3d Kubernetes
+        if: false # paid plan
         run: |
           kubectl create secret docker-registry regcred \
             --docker-server=https://ghcr.io \
@@ -338,12 +344,14 @@ jobs:
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 #NEW: (START) ############################################################
       - name: Login to ghcr.io registry
+        if: false # paid plan
         uses: docker/login-action@v3
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
       - name: Build and Push to GHCR
+        if: false # paid plan
         uses: docker/build-push-action@v6
         with:
           context: ./worker  # added folder of Dockerfile in repo
@@ -361,6 +369,7 @@ jobs:
             --no-lb
             --k3s-arg "--no-deploy=traefik,servicelb,metrics-server@server:*"
       - name: Smoke test deployment in k3d Kubernetes
+        if: false # paid plan
         run: |
           kubectl create secret docker-registry regcred \
             --docker-server=https://ghcr.io \
