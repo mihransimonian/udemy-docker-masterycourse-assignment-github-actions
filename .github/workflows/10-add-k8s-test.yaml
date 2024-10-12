@@ -407,7 +407,7 @@ jobs:
         # GHA `services:` can do this if you're trying to avoid docker compose
       # I keep getting errors on detached mode
       - name: Check Docker Compose version
-        run: docker-compose --version
+        run: docker compose --version
       # I keep getting errors on detached mode
       - name: Install latest Docker Compose
         run: |
