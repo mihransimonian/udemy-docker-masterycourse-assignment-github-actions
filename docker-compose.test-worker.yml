@@ -83,7 +83,7 @@ services:
     networks:
       - back-tier
     # run the tests here, for now I find this suffice
-    command: echo 0 || exit 1
+    command: ["dotnet", "--version"] 
 
 volumes:
   db-data:
