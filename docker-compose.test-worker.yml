@@ -83,7 +83,7 @@ services:
     networks:
       - back-tier
     # run the tests here, for now I find this suffice
-    command: ["dotnet", "--version"] 
+    entrypoint: ["dotnet", "--version"] 
 
 volumes:
   db-data:

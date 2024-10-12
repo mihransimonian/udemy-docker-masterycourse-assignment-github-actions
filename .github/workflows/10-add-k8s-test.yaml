@@ -405,13 +405,12 @@ jobs:
       # for more advanced tests, use docker compose with `depends_on`
         # NOTE: GHA and other CIs can also run dependency containers on their own
         # GHA `services:` can do this if you're trying to avoid docker compose
-      - name: Check Docker Compose version
-        run: docker compose version
       - name: Test healthcheck in Docker Compose
         run: |
           export TESTING_IMAGE="${{ github.run_id }}"
-          docker compose --file docker-compose.test-worker.yml up -d
+          docker compose -f docker-compose.test-worker.yml up -d # start dependencies
           docker compose -f docker-compose.test-worker.yml run --rm test-worker
+          docker compose -f docker-compose.test-worker.yml down  # Clean up containers
       - name: Run Trivy for all CVEs (non-blocking)
         uses: aquasecurity/trivy-action@master
         with:
