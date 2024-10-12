@@ -51,6 +51,7 @@ jobs:
           cache-to: type=gha,mode=max
           platforms: linux/amd64
       - uses: AbsaOSS/k3d-action@v2
+        if: env.run_ghcr == 'true'  # paid plan
         with:
           cluster-name: "test-cluster-result-1"
           args: >-
@@ -208,6 +209,7 @@ jobs:
           cache-to: type=gha,mode=max
           platforms: linux/amd64
       - uses: AbsaOSS/k3d-action@v2
+        if: env.run_ghcr == 'true'  # paid plan
         with:
           cluster-name: "test-cluster-vote-1"
           args: >-
@@ -365,6 +367,7 @@ jobs:
           cache-to: type=gha,mode=max
           platforms: linux/amd64
       - uses: AbsaOSS/k3d-action@v2
+        if: env.run_ghcr == 'true'  # paid plan
         with:
           cluster-name: "test-cluster-worker-1"
           args: >-
@@ -394,18 +397,19 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
           platforms: linux/amd64
+      # skipped as image requires db, should use docker compose to perform testing
       # for simple tests (npm test, etc.) just run a local image in docker
-      # skipped because image requires db
       # - name: Unit Testing in Docker
       #   run: |
       #     docker run --rm ${{ github.run_id }} echo "run test commands here"
-        # for more advanced tests, use docker compose with `depends_on`
-          # NOTE: GHA and other CIs can also run dependency containers on their own
-          # GHA `services:` can do this if you're trying to avoid docker compose
+      # for more advanced tests, use docker compose with `depends_on`
+        # NOTE: GHA and other CIs can also run dependency containers on their own
+        # GHA `services:` can do this if you're trying to avoid docker compose
       - name: Test healthcheck in Docker Compose
         run: |
           export TESTING_IMAGE="${{ github.run_id }}"
-          docker compose -f docker-compose.test-worker.yml up --exit-code-from test-worker
+            docker compose -f docker-compose.test-worker.yml -d # Start dependencies
+            docker compose -f docker-compose.test-worker.yml run --rm test-worker
       - name: Run Trivy for all CVEs (non-blocking)
         uses: aquasecurity/trivy-action@master
         with:
