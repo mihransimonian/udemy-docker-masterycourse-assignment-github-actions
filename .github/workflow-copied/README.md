@@ -1,1 +1,1 @@
-all files are copied from https://github.com/BretFisher/docker-ci-automation/blob/main/.github/workflows, placed in `workflows` folder and altered to my liking as part of the assignment.
+all files are copied from https://github.com/BretFisher/docker-ci-automation/blob/main/.github/workflows, placed in `workflows` folder and altered for this repository as part of the assignment.
