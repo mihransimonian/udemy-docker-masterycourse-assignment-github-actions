@@ -32,4 +32,6 @@ WORKDIR /app
 
 COPY --from=build /app .
 
-ENTRYPOINT ["dotnet", "Worker.dll"]
+# Make ENTRYPOINT flexible to allow overriding
+ENTRYPOINT ["dotnet"]
+CMD ["Worker.dll"]
