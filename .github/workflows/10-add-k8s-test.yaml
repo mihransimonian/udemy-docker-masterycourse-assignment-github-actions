@@ -38,6 +38,7 @@ jobs:
       - name: Build and Push to GHCR
         uses: docker/build-push-action@v6
         with:
+          context: ./result  # added folder of Dockerfile in repo
           push: true
           tags: ghcr.io/mihransimonian/udemy-dockermastery-assignment-github-actions-result:${{ github.run_id }}
           target: test
@@ -191,6 +192,7 @@ jobs:
       - name: Build and Push to GHCR
         uses: docker/build-push-action@v6
         with:
+          context: ./vote  # added folder of Dockerfile in repo
           push: true
           tags: ghcr.io/mihransimonian/udemy-dockermastery-assignment-github-actions-vote:${{ github.run_id }}
           target: test
@@ -344,6 +346,7 @@ jobs:
       - name: Build and Push to GHCR
         uses: docker/build-push-action@v6
         with:
+          context: ./worker  # added folder of Dockerfile in repo
           push: true
           tags: ghcr.io/mihransimonian/udemy-dockermastery-assignment-github-actions-worker:${{ github.run_id }}
           target: test
