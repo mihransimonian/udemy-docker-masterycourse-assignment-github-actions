@@ -405,20 +405,13 @@ jobs:
       # for more advanced tests, use docker compose with `depends_on`
         # NOTE: GHA and other CIs can also run dependency containers on their own
         # GHA `services:` can do this if you're trying to avoid docker compose
-      # I keep getting errors on detached mode
       - name: Check Docker Compose version
         run: docker compose version
-      # I keep getting errors on detached mode
-      # - name: Install latest Docker Compose
-      #   run: |
-      #     sudo curl -L "https://github.com/docker/compose/releases/download/v2.0.1/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
-      #     sudo chmod +x /usr/local/bin/docker-compose
       - name: Test healthcheck in Docker Compose
         run: |
           export TESTING_IMAGE="${{ github.run_id }}"
-          docker compose -f docker-compose.test-worker.yml up --exit-code-from test-worker
-        # docker compose --file docker-compose.test-worker.yml --detach
-        # docker compose -f docker-compose.test-worker.yml run --rm test-worker
+          docker compose --file docker-compose.test-worker.yml --detach
+          docker compose -f docker-compose.test-worker.yml run --rm test-worker
       - name: Run Trivy for all CVEs (non-blocking)
         uses: aquasecurity/trivy-action@master
         with:
