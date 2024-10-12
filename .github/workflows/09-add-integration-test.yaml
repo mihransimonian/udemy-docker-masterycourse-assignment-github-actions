@@ -294,12 +294,9 @@ jobs:
       - name: Test healthcheck in Docker Compose
         run: |
           export TESTING_IMAGE="${{ github.run_id }}"
-            docker compose -f docker-compose.test-worker.yml -d # Start dependencies
-            docker compose -f docker-compose.test-worker.yml run --rm test-worker
-        # Ensure cleanup happens even if the test fails
-        finally:
-          - name: Cleanup
-            run: docker compose -f docker-compose.test-worker.yml down
+          docker compose -f docker-compose.test-worker.yml up -d # start dependencies
+          docker compose -f docker-compose.test-worker.yml run --rm test-worker # run test
+          docker compose -f docker-compose.test-worker.yml down  # clean up
 #NEW: (END) ############################################################
       - name: Run Trivy for all CVEs (non-blocking)
         uses: aquasecurity/trivy-action@master

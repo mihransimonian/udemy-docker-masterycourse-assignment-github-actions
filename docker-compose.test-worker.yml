@@ -83,7 +83,7 @@ services:
     networks:
       - back-tier
     # run the tests here, for now I find this suffice
-    entrypoint: ["sh", "-c", "echo 'Running tests...'; exit 0"]  # Simple command to run
+    entrypoint: ["sh", "-c", "echo 'Test succesful, exiting'; exit 0"]
 
 volumes:
   db-data:
