@@ -416,8 +416,8 @@ jobs:
       - name: Test healthcheck in Docker Compose
         run: |
           export TESTING_IMAGE="${{ github.run_id }}"
-            docker compose --detach --file docker-compose.test-worker.yml
-            docker compose -f docker-compose.test-worker.yml run --rm test-worker
+          docker compose --detach --file docker-compose.test-worker.yml
+          docker compose -f docker-compose.test-worker.yml run --rm test-worker
       - name: Run Trivy for all CVEs (non-blocking)
         uses: aquasecurity/trivy-action@master
         with:
