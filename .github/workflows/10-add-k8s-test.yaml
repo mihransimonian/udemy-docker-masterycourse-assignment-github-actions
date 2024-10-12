@@ -12,7 +12,7 @@ env:
 
 jobs:
   build-image-result:
-    if: true # run job true/false
+    if: false # run job true/false
     name: Build Image Result
     runs-on: ubuntu-latest
     permissions:
@@ -170,7 +170,7 @@ jobs:
           edit-mode: replace
 
   build-image-vote:
-    if: true # run job true/false
+    if: false # run job true/false
     name: Build Image Vote
     runs-on: ubuntu-latest
     permissions:
@@ -408,7 +408,7 @@ jobs:
       - name: Test healthcheck in Docker Compose
         run: |
           export TESTING_IMAGE="${{ github.run_id }}"
-            docker compose -f docker-compose.test-worker.yml -d # Start dependencies
+            docker compose --detach --file docker-compose.test-worker.yml
             docker compose -f docker-compose.test-worker.yml run --rm test-worker
       - name: Run Trivy for all CVEs (non-blocking)
         uses: aquasecurity/trivy-action@master
