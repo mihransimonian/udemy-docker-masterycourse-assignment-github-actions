@@ -1,5 +1,6 @@
 ---
 name: 99 Parallelize Jobs
+# steps from file 09-add-integration-test.yaml seperated in parallel jobs
 
 on:
   push:
@@ -8,11 +9,11 @@ on:
   pull_request:
 
 env:
-  run_ghcr: false # paid plan, run ghcr jobs true/false
-  image_tag_stepnumber: 99
+  final_image_tag: 99
+
 
 jobs:
-  build-image-result:
+  build-test-image-result-image:
     if: true # run job true/false
     name: Build Image Result
     runs-on: ubuntu-latest
@@ -32,43 +33,6 @@ jobs:
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
-      - name: Login to ghcr.io registry
-        if: env.run_ghcr == 'true'  # paid plan
-        uses: docker/login-action@v3
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-      - name: Build and Push to GHCR
-        if: env.run_ghcr == 'true'  # paid plan
-        uses: docker/build-push-action@v6
-        with:
-          context: ./result  # added folder of Dockerfile in repo
-          push: true
-          tags: ghcr.io/mihransimonian/udemy-dockermastery-assignment-github-actions-result:${{ github.run_id }}
-          # target: test
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-          platforms: linux/amd64
-      - uses: AbsaOSS/k3d-action@v2
-        if: env.run_ghcr == 'true'  # paid plan
-        with:
-          cluster-name: "test-cluster-result-1"
-          args: >-
-            --agents 1
-            --no-lb
-            --k3s-arg "--no-deploy=traefik,servicelb,metrics-server@server:*"
-      - name: Smoke test deployment in k3d Kubernetes
-        if: env.run_ghcr == 'true'  # paid plan
-        run: |
-          kubectl create secret docker-registry regcred \
-            --docker-server=https://ghcr.io \
-            --docker-username=${{ github.actor }} \
-            --docker-password=${{ secrets.GITHUB_TOKEN }}
-          export TESTING_IMAGE=ghcr.io/mihransimonian/udemy-dockermastery-assignment-github-actions-result:"$GITHUB_RUN_ID"
-          envsubst < manifests/deployment.yaml  | kubectl apply -f -
-          kubectl rollout status deployment myapp
-          kubectl exec deploy/myapp -- curl --fail localhost
       - name: Build and export to Docker
         uses: docker/build-push-action@v6
         with:
@@ -80,36 +44,52 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
           platforms: linux/amd64
+
+
+# NEXT JOB #######################################################################   
+  test-unit-result-image:
+    name: Unit tests in Docker
+    needs: [build-test-image-result-image]
+    runs-on: ubuntu-latest
+    steps:
       # for simple tests (npm test, etc.) just run a local image in docker
       - name: Unit Testing in Docker
-        run: |
-          docker run --rm ${{ github.run_id }} echo "run test commands here"
+        run: docker run --rm ${{ github.run_id }} echo "run test commands here"
+
+# NEXT JOB #######################################################################   
+  test-integration-result-image:
+    name: Integration tests in Docker
+    needs: [build-test-image-result-image]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout git repo
+        uses: actions/checkout@v4
+      - name: Test healthcheck in Docker Compose
         # for more advanced tests, use docker compose with `depends_on`
           # NOTE: GHA and other CIs can also run dependency containers on their own
           # GHA `services:` can do this if you're trying to avoid docker compose
-      - name: Test healthcheck in Docker Compose
         run: |
           export TESTING_IMAGE="${{ github.run_id }}"
           docker compose -f docker-compose.test-result.yml up --exit-code-from test-result
+
+
+# NEXT JOB #######################################################################   
+  scan-image-result-image:
+    name: Scan Image with Trivy
+    needs: [build-test-image-result-image]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read # for actions/checkout to fetch code
+      security-events: write # for github/codeql-action/upload-sarif to upload SARIF results
+    steps:
+      - name: Checkout git repo
+        uses: actions/checkout@v4
       - name: Run Trivy for all CVEs (non-blocking)
         uses: aquasecurity/trivy-action@master
         with:
           image-ref: ${{ github.run_id }}  # assures unique image of run id
           exit-code: 0
           format: table
-      - name: Docker Metadata for Final Image Build  # renewed name
-        id: docker_meta
-        uses: docker/metadata-action@v5
-        with:
-          images: mihransimonian/udemy-dockermastery-assignment-github-actions-result
-          flavor: |
-            latest=false
-          tags: |
-            type=raw,value=${{env.image_tag_stepnumber}}
-            type=raw,value=latest,enable=${{ endsWith(github.ref, github.event.repository.default_branch) }}
-            type=ref,event=pr
-            type=ref,event=branch
-            type=semver,pattern={{version}}
       - name: Run Trivy for HIGH,CRITICAL CVEs and report (non-block)
         uses: aquasecurity/trivy-action@master
         with:
@@ -125,325 +105,42 @@ jobs:
         if: always()
         with:
           sarif_file: 'trivy-results-image-result.sarif'
+
+
+# NEXT JOB #######################################################################   
+  build-final-image-result-image:
+    name: Build Final Image
+    needs: [build-test-image-result-image, test-unit-result-image, test-integration-result-image, scan-image-result-image]
+    runs-on: ubuntu-latest
+
+    permissions:
+      pull-requests: write # needed to create and update comments in PRs
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      - name: Docker Metadata for Final Image Build  # renewed name
+        id: docker_meta
+        uses: docker/metadata-action@v5
+        with:
+          images: mihransimonian/udemy-dockermastery-assignment-github-actions-result
+          flavor: |
+            latest=false
+          tags: |
+            type=raw,value=${{env.final_image_tag}}
+            type=raw,value=latest,enable=${{ endsWith(github.ref, github.event.repository.default_branch) }}
+            type=ref,event=pr
+            type=ref,event=branch
+            type=semver,pattern={{version}}
       - name: Docker Build and Push to Docker Hub # renewed name
         uses: docker/build-push-action@v6
         with:
           context: ./result  # added folder of Dockerfile in repo
-          push: true
-          tags: ${{ steps.docker_meta.outputs.tags }}
-          labels: ${{ steps.docker_meta.outputs.labels }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-          # comma seperated list of what OS and architechtures to build for (in parallel)
-          # default is linux/amd64 (the OS of the runner) but you can add more
-          # adding linux/arm64 is recommended for Apple Silicon, Raspberry Pi, AWS Graviton, etc.
-          # linux/arm/v7 is for 32-bit ARM devices like Raspberry Pi 2/3
-          platforms: linux/amd64,linux/arm64,linux/arm/v7
-        # If PR, put image tags in the PR comments
-        # from https://github.com/marketplace/actions/create-or-update-comment
-      - name: Find comment for image tags
-        uses: peter-evans/find-comment@v3
-        if: github.event_name == 'pull_request'
-        id: fc
-        with:
-          issue-number: ${{ github.event.pull_request.number }}
-          comment-author: 'github-actions[bot]'
-          body-includes: Docker image tag(s) pushed
-        # If PR, put image tags in the PR comments
-      - name: Create or update comment for image tags
-        uses: peter-evans/create-or-update-comment@v4
-        if: github.event_name == 'pull_request'
-        with:
-          comment-id: ${{ steps.fc.outputs.comment-id }}
-          issue-number: ${{ github.event.pull_request.number }}
-          body: |
-            Docker image tag(s) pushed:
-            ```text
-            ${{ steps.docker_meta.outputs.tags }}
-            ```
-
-            Labels added to images:
-            ```text
-            ${{ steps.docker_meta.outputs.labels }}
-            ```
-          edit-mode: replace
-
-  build-image-vote:
-    if: true # run job true/false
-    name: Build Image Vote
-    runs-on: ubuntu-latest
-    permissions:
-      pull-requests: write # needed to create and update comments in PRs
-      contents: read # for actions/checkout to fetch code
-      security-events: write # for github/codeql-action/upload-sarif to upload SARIF results
-    steps:
-      - name: Set up git repo
-        uses: actions/checkout@v4
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-      - name: Login to Docker Hub
-        uses: docker/login-action@v3
-        with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
-      - name: Login to ghcr.io registry
-        if: env.run_ghcr == 'true'  # paid plan
-        uses: docker/login-action@v3
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-      - name: Build and Push to GHCR
-        if: env.run_ghcr == 'true'  # paid plan
-        uses: docker/build-push-action@v6
-        with:
-          context: ./vote  # added folder of Dockerfile in repo
-          push: true
-          tags: ghcr.io/mihransimonian/udemy-dockermastery-assignment-github-actions-vote:${{ github.run_id }}
-          # target: test
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-          platforms: linux/amd64
-      - uses: AbsaOSS/k3d-action@v2
-        if: env.run_ghcr == 'true'  # paid plan
-        with:
-          cluster-name: "test-cluster-vote-1"
-          args: >-
-            --agents 1
-            --no-lb
-            --k3s-arg "--no-deploy=traefik,servicelb,metrics-server@server:*"
-      - name: Smoke test deployment in k3d Kubernetes
-        if: env.run_ghcr == 'true'  # paid plan
-        run: |
-          kubectl create secret docker-registry regcred \
-            --docker-server=https://ghcr.io \
-            --docker-username=${{ github.actor }} \
-            --docker-password=${{ secrets.GITHUB_TOKEN }}
-          export TESTING_IMAGE=ghcr.io/mihransimonian/udemy-dockermastery-assignment-github-actions-vote:"$GITHUB_RUN_ID"
-          envsubst < manifests/deployment.yaml  | kubectl apply -f -
-          kubectl rollout status deployment myapp
-          kubectl exec deploy/myapp -- curl --fail localhost
-      - name: Build and export to Docker
-        uses: docker/build-push-action@v6
-        with:
-          context: ./vote  # added folder of Dockerfile in repo
-          push: false
-          load: true # Export to Docker Engine rather than pushing to a registry
-          tags: ${{ github.run_id }}  # assures unique image of run id
-          # target: test
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-          platforms: linux/amd64
-      # for simple tests (npm test, etc.) just run a local image in docker
-      - name: Unit Testing in Docker
-        run: |
-          docker run --rm ${{ github.run_id }} echo "run test commands here"
-        # for more advanced tests, use docker compose with `depends_on`
-          # NOTE: GHA and other CIs can also run dependency containers on their own
-          # GHA `services:` can do this if you're trying to avoid docker compose
-      - name: Test healthcheck in Docker Compose
-        run: |
-          export TESTING_IMAGE="${{ github.run_id }}"
-          docker compose -f docker-compose.test-vote.yml up --exit-code-from test-vote
-      - name: Run Trivy for all CVEs (non-blocking)
-        uses: aquasecurity/trivy-action@master
-        with:
-          image-ref: ${{ github.run_id }}  # assures unique image of run id
-          exit-code: 0
-          format: table
-      - name: Docker Metadata for Final Image Build  # renewed name
-        id: docker_meta
-        uses: docker/metadata-action@v5
-        with:
-          images: mihransimonian/udemy-dockermastery-assignment-github-actions-vote
-          flavor: |
-            latest=false
-          tags: |
-            type=raw,value=${{env.image_tag_stepnumber}}
-            type=raw,value=latest,enable=${{ endsWith(github.ref, github.event.repository.default_branch) }}
-            type=ref,event=pr
-            type=ref,event=branch
-            type=semver,pattern={{version}}
-      - name: Run Trivy for HIGH,CRITICAL CVEs and report (non-block)
-        uses: aquasecurity/trivy-action@master
-        with:
-          image-ref: ${{ github.run_id }}
-          exit-code: 0 # 1 for block, image has many CVEs so skip for now
-          ignore-unfixed: true
-          vuln-type: 'os,library'
-          severity: 'HIGH,CRITICAL'
-          format: 'sarif'
-          output: 'trivy-results-image-vote.sarif'
-      - name: Upload Trivy scan results to GitHub Security tab
-        uses: github/codeql-action/upload-sarif@v3
-        if: always()
-        with:
-          sarif_file: 'trivy-results-image-vote.sarif'
-      - name: Docker Build and Push to Docker Hub # renewed name
-        uses: docker/build-push-action@v6
-        with:
-          context: ./vote  # added folder of Dockerfile in repo
-          push: true
-          tags: ${{ steps.docker_meta.outputs.tags }}
-          labels: ${{ steps.docker_meta.outputs.labels }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-          # comma seperated list of what OS and architechtures to build for (in parallel)
-          # default is linux/amd64 (the OS of the runner) but you can add more
-          # adding linux/arm64 is recommended for Apple Silicon, Raspberry Pi, AWS Graviton, etc.
-          # linux/arm/v7 is for 32-bit ARM devices like Raspberry Pi 2/3
-          platforms: linux/amd64,linux/arm64,linux/arm/v7
-        # If PR, put image tags in the PR comments
-        # from https://github.com/marketplace/actions/create-or-update-comment
-      - name: Find comment for image tags
-        uses: peter-evans/find-comment@v3
-        if: github.event_name == 'pull_request'
-        id: fc
-        with:
-          issue-number: ${{ github.event.pull_request.number }}
-          comment-author: 'github-actions[bot]'
-          body-includes: Docker image tag(s) pushed
-        # If PR, put image tags in the PR comments
-      - name: Create or update comment for image tags
-        uses: peter-evans/create-or-update-comment@v4
-        if: github.event_name == 'pull_request'
-        with:
-          comment-id: ${{ steps.fc.outputs.comment-id }}
-          issue-number: ${{ github.event.pull_request.number }}
-          body: |
-            Docker image tag(s) pushed:
-            ```text
-            ${{ steps.docker_meta.outputs.tags }}
-            ```
-
-            Labels added to images:
-            ```text
-            ${{ steps.docker_meta.outputs.labels }}
-            ```
-          edit-mode: replace
-
-  build-image-worker:
-    if: true # run job true/false
-    name: Build Image Worker
-    runs-on: ubuntu-latest
-    permissions:
-      pull-requests: write # needed to create and update comments in PRs
-      contents: read # for actions/checkout to fetch code
-      security-events: write # for github/codeql-action/upload-sarif to upload SARIF results
-    steps:
-      - name: Set up git repo
-        uses: actions/checkout@v4
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-      - name: Login to Docker Hub
-        uses: docker/login-action@v3
-        with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
-      - name: Login to ghcr.io registry
-        if: env.run_ghcr == 'true'  # paid plan
-        uses: docker/login-action@v3
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-      - name: Build and Push to GHCR
-        if: env.run_ghcr == 'true'  # paid plan
-        uses: docker/build-push-action@v6
-        with:
-          context: ./worker  # added folder of Dockerfile in repo
-          push: true
-          tags: ghcr.io/mihransimonian/udemy-dockermastery-assignment-github-actions-worker:${{ github.run_id }}
-          # target: test
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-          platforms: linux/amd64
-      - uses: AbsaOSS/k3d-action@v2
-        if: env.run_ghcr == 'true'  # paid plan
-        with:
-          cluster-name: "test-cluster-worker-1"
-          args: >-
-            --agents 1
-            --no-lb
-            --k3s-arg "--no-deploy=traefik,servicelb,metrics-server@server:*"
-      - name: Smoke test deployment in k3d Kubernetes
-        if: env.run_ghcr == 'true'  # paid plan
-        run: |
-          kubectl create secret docker-registry regcred \
-            --docker-server=https://ghcr.io \
-            --docker-username=${{ github.actor }} \
-            --docker-password=${{ secrets.GITHUB_TOKEN }}
-          export TESTING_IMAGE=ghcr.io/mihransimonian/udemy-dockermastery-assignment-github-actions-worker:"$GITHUB_RUN_ID"
-          envsubst < manifests/deployment.yaml  | kubectl apply -f -
-          kubectl rollout status deployment myapp
-          kubectl exec deploy/myapp -- curl --fail localhost
-      - name: Build and export to Docker
-        uses: docker/build-push-action@v6
-        with:
-          context: ./worker  # added folder of Dockerfile in repo
-          push: false
-          load: true # Export to Docker Engine rather than pushing to a registry
-          tags: ${{ github.run_id }}  # assures unique image of run id
-          # target: test
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-          platforms: linux/amd64
-      # skipped as image requires db, should use docker compose to perform testing
-      # for simple tests (npm test, etc.) just run a local image in docker
-      # - name: Unit Testing in Docker
-      #   run: |
-      #     docker run --rm ${{ github.run_id }} echo "run test commands here"
-      # for more advanced tests, use docker compose with `depends_on`
-        # NOTE: GHA and other CIs can also run dependency containers on their own
-        # GHA `services:` can do this if you're trying to avoid docker compose
-      - name: Test healthcheck in Docker Compose
-        run: |
-          export TESTING_IMAGE="${{ github.run_id }}"
-          docker compose -f docker-compose.test-worker.yml up -d # start dependencies
-          docker compose -f docker-compose.test-worker.yml run --rm test-worker # run test
-          docker compose -f docker-compose.test-worker.yml down  # clean up
-      - name: Run Trivy for all CVEs (non-blocking)
-        uses: aquasecurity/trivy-action@master
-        with:
-          image-ref: ${{ github.run_id }}  # assures unique image of run id
-          exit-code: 0
-          format: table
-      - name: Docker Metadata for Final Image Build  # renewed name
-        id: docker_meta
-        uses: docker/metadata-action@v5
-        with:
-          images: mihransimonian/udemy-dockermastery-assignment-github-actions-worker
-          flavor: |
-            latest=false
-          tags: |
-            type=raw,value=${{env.image_tag_stepnumber}}
-            type=raw,value=latest,enable=${{ endsWith(github.ref, github.event.repository.default_branch) }}
-            type=ref,event=pr
-            type=ref,event=branch
-            type=semver,pattern={{version}}
-      - name: Run Trivy for HIGH,CRITICAL CVEs and report (non-block)
-        uses: aquasecurity/trivy-action@master
-        with:
-          image-ref: ${{ github.run_id }}
-          exit-code: 0 # 1 for block, image has many CVEs so skip for now
-          ignore-unfixed: true
-          vuln-type: 'os,library'
-          severity: 'HIGH,CRITICAL'
-          format: 'sarif'
-          output: 'trivy-results-image-worker.sarif'
-      - name: Upload Trivy scan results to GitHub Security tab
-        uses: github/codeql-action/upload-sarif@v3
-        if: always()
-        with:
-          sarif_file: 'trivy-results-image-worker.sarif'
-      - name: Docker Build and Push to Docker Hub # renewed name
-        uses: docker/build-push-action@v6
-        with:
-          context: ./worker  # added folder of Dockerfile in repo
           push: true
           tags: ${{ steps.docker_meta.outputs.tags }}
           labels: ${{ steps.docker_meta.outputs.labels }}
