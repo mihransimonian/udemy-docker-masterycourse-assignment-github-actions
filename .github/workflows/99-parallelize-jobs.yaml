@@ -14,7 +14,7 @@ env:
   final_image_tag: 99
 
 jobs:
-# FIRST JOB #######################################################################   
+# result image - FIRST JOB #######################################################################   
   build-test-image-result-image:
     if: true # run job true/false
     name: Result image - Build testimage
@@ -38,15 +38,15 @@ jobs:
           cache-to: type=gha,mode=max
           platforms: linux/amd64
           tags: testimage-result-${{ github.run_id }}:latest
-          outputs: type=docker, dest=/tmp/testimage_result_${{ github.run_id }}.tar  # assures unique image of run id
+          outputs: type=docker, dest=/tmp/testimage-result-${{ github.run_id }}.tar  # assures unique image of run id
       # new step to share image between different github runners (jobs)
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: testimage-result-${{ github.run_id }} # assures unique image of run id
-          path: /tmp/testimage_result_${{ github.run_id }}.tar  # assures unique image of run id
+          path: /tmp/testimage-result-${{ github.run_id }}.tar  # assures unique image of run id
 
-# NEXT JOB #######################################################################   
+# result image - NEXT JOB #######################################################################   
   test-unit-result-image:
     name: Result image - Unit tests in Docker
     needs: [build-test-image-result-image]
@@ -61,13 +61,13 @@ jobs:
       # new step to share image between different github runners (jobs)
       - name: Load image
         run: |
-          docker load --input /tmp/testimage_result_${{ github.run_id }}.tar
+          docker load --input /tmp/testimage-result-${{ github.run_id }}.tar
           docker image ls -a
       # for simple tests (npm test, etc.) just run a local image in docker
       - name: Unit Testing in Docker
         run: docker run --rm testimage-result-${{ github.run_id }} echo "run test commands here"
 
-# NEXT JOB #######################################################################   
+# result image - NEXT JOB #######################################################################   
   scan-image-result-image:
     name: Result image - Scan image with Trivy
     needs: [build-test-image-result-image]
@@ -87,7 +87,7 @@ jobs:
       # new step to share image between different github runners (jobs)
       - name: Load image
         run: |
-          docker load --input /tmp/testimage_result_${{ github.run_id }}.tar
+          docker load --input /tmp/testimage-result-${{ github.run_id }}.tar
           docker image ls -a
       - name: Run Trivy for all CVEs (non-blocking)
         uses: aquasecurity/trivy-action@master
@@ -111,7 +111,7 @@ jobs:
         with:
           sarif_file: 'trivy-results-image-result.sarif'
 
-# NEXT JOB #######################################################################   
+# result image - NEXT JOB #######################################################################   
   test-integration-result-image:
     name: Result image - Integration tests in Docker
     needs: [build-test-image-result-image, test-unit-result-image]
@@ -130,7 +130,7 @@ jobs:
       # new step to share image between different github runners (jobs)
       - name: Load image
         run: |
-          docker load --input /tmp/testimage_result_${{ github.run_id }}.tar
+          docker load --input /tmp/testimage-result-${{ github.run_id }}.tar
           docker image ls -a
       - name: Test healthcheck in Docker Compose
         # for more advanced tests, use docker compose with `depends_on`
@@ -140,7 +140,7 @@ jobs:
           export TESTING_IMAGE="testimage-result-${{ github.run_id }}"
           docker compose -f docker-compose.test-result.yml up --exit-code-from test-result
 
-# NEXT JOB #######################################################################   
+# result image - NEXT JOB #######################################################################   
   build-final-image-result-image:
     name: Result image - Build and push final image
     needs: [build-test-image-result-image, test-unit-result-image, test-integration-result-image, scan-image-result-image]
@@ -176,7 +176,417 @@ jobs:
       - name: Docker Build and Push to Docker Hub # renewed name
         uses: docker/build-push-action@v6
         with:
-          context: ./result  # added folder of Dockerfile in repo
+          context: ./result  # Dockerfile in repo-subfolder
+          push: true
+          tags: ${{ steps.docker_meta.outputs.tags }}
+          labels: ${{ steps.docker_meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          # comma seperated list of what OS and architechtures to build for (in parallel)
+          # default is linux/amd64 (the OS of the runner) but you can add more
+          # adding linux/arm64 is recommended for Apple Silicon, Raspberry Pi, AWS Graviton, etc.
+          # linux/arm/v7 is for 32-bit ARM devices like Raspberry Pi 2/3
+          platforms: linux/amd64,linux/arm64,linux/arm/v7
+        # If PR, put image tags in the PR comments
+        # from https://github.com/marketplace/actions/create-or-update-comment
+      - name: Find comment for image tags
+        uses: peter-evans/find-comment@v3
+        if: github.event_name == 'pull_request'
+        id: fc
+        with:
+          issue-number: ${{ github.event.pull_request.number }}
+          comment-author: 'github-actions[bot]'
+          body-includes: Docker image tag(s) pushed
+        # If PR, put image tags in the PR comments
+      - name: Create or update comment for image tags
+        uses: peter-evans/create-or-update-comment@v4
+        if: github.event_name == 'pull_request'
+        with:
+          comment-id: ${{ steps.fc.outputs.comment-id }}
+          issue-number: ${{ github.event.pull_request.number }}
+          body: |
+            Docker image tag(s) pushed:
+            ```text
+            ${{ steps.docker_meta.outputs.tags }}
+            ```
+
+            Labels added to images:
+            ```text
+            ${{ steps.docker_meta.outputs.labels }}
+            ```
+          edit-mode: replace
+
+
+# vote image - FIRST JOB #######################################################################   
+  build-test-image-vote-image:
+    if: true # run job true/false
+    name: Vote image - Build testimage
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read # for actions/checkout to fetch code
+      pull-requests: write # needed to create and update comments in PRs
+    steps:
+      - name: Set up git repo
+        uses: actions/checkout@v4
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      # new step to share image between different github runners (jobs)
+      - name: Build and export
+        uses: docker/build-push-action@v6
+        with:
+          context: ./vote  # Dockerfile in repo-subfolder
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          platforms: linux/amd64
+          tags: testimage-vote-${{ github.run_id }}:latest
+          outputs: type=docker, dest=/tmp/testimage-vote-${{ github.run_id }}.tar  # assures unique image of run id
+      # new step to share image between different github runners (jobs)
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: testimage-vote-${{ github.run_id }} # assures unique image of run id
+          path: /tmp/testimage-vote-${{ github.run_id }}.tar  # assures unique image of run id
+
+# vote image - NEXT JOB #######################################################################   
+  test-unit-vote-image:
+    name: Vote image - Unit tests in Docker
+    needs: [build-test-image-vote-image]
+    runs-on: ubuntu-latest
+    steps:
+      # new step to share image between different github runners (jobs)
+      - name: Download artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: testimage-vote-${{ github.run_id }}  # assures unique image of run id
+          path: /tmp
+      # new step to share image between different github runners (jobs)
+      - name: Load image
+        run: |
+          docker load --input /tmp/testimage-vote-${{ github.run_id }}.tar
+          docker image ls -a
+      # for simple tests (npm test, etc.) just run a local image in docker
+      - name: Unit Testing in Docker
+        run: docker run --rm testimage-vote-${{ github.run_id }} echo "run test commands here"
+
+# vote image - NEXT JOB #######################################################################   
+  scan-image-vote-image:
+    name: Vote image - Scan image with Trivy
+    needs: [build-test-image-vote-image]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read # for actions/checkout to fetch code
+      security-events: write # for uploading SARIF results
+    steps:
+      - name: Checkout git repo
+        uses: actions/checkout@v4
+      # new step to share image between different github runners (jobs)
+      - name: Download artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: testimage-vote-${{ github.run_id }}  # assures unique image of run id
+          path: /tmp
+      # new step to share image between different github runners (jobs)
+      - name: Load image
+        run: |
+          docker load --input /tmp/testimage-vote-${{ github.run_id }}.tar
+          docker image ls -a
+      - name: Run Trivy for all CVEs (non-blocking)
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: testimage-vote-${{ github.run_id }}  # assures unique image of run id
+          exit-code: 0
+          format: table
+      - name: Run Trivy for HIGH,CRITICAL CVEs and report (non-block)
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: testimage-vote-${{ github.run_id }}
+          exit-code: 0 # 1 for block, image has many CVEs so skip for now
+          ignore-unfixed: true
+          vuln-type: 'os,library'
+          severity: 'HIGH,CRITICAL'
+          format: 'sarif'
+          output: 'trivy-results-image-vote.sarif'
+      - name: Upload Trivy scan results to GitHub Security tab
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: 'trivy-results-image-vote.sarif'
+
+# vote image - NEXT JOB #######################################################################   
+  test-integration-vote-image:
+    name: Vote image - Integration tests in Docker
+    needs: [build-test-image-vote-image, test-unit-vote-image]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read # for actions/checkout to fetch code
+    steps:
+      - name: Checkout git repo
+        uses: actions/checkout@v4
+      # new step to share image between different github runners (jobs)
+      - name: Download artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: testimage-vote-${{ github.run_id }}  # assures unique image of run id
+          path: /tmp
+      # new step to share image between different github runners (jobs)
+      - name: Load image
+        run: |
+          docker load --input /tmp/testimage-vote-${{ github.run_id }}.tar
+          docker image ls -a
+      - name: Test healthcheck in Docker Compose
+        # for more advanced tests, use docker compose with `depends_on`
+          # NOTE: GHA and other CIs can also run dependency containers on their own
+          # GHA `services:` can do this if you're trying to avoid docker compose
+        run: |
+          export TESTING_IMAGE="testimage-vote-${{ github.run_id }}"
+          docker compose -f docker-compose.test-vote.yml up --exit-code-from test-vote
+
+# vote image - NEXT JOB #######################################################################   
+  build-final-image-vote-image:
+    name: Vote image - Build and push final image
+    needs: [build-test-image-vote-image, test-unit-vote-image, test-integration-vote-image, scan-image-vote-image]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read # for actions/checkout to fetch code
+      pull-requests: write # needed to create and update comments in PRs
+    steps:
+      - name: Set up git repo
+        uses: actions/checkout@v4
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      - name: Docker Metadata for Final Image Build  # renewed name
+        id: docker_meta
+        uses: docker/metadata-action@v5
+        with:
+          images: mihransimonian/udemy-dockermastery-assignment-github-actions-vote
+          flavor: |
+            latest=false
+          tags: |
+            type=raw,value=${{env.final_image_tag}}
+            type=raw,value=latest,enable=${{ endsWith(github.ref, github.event.repository.default_branch) }}
+            type=ref,event=pr
+            type=ref,event=branch
+            type=semver,pattern={{version}}
+      - name: Docker Build and Push to Docker Hub # renewed name
+        uses: docker/build-push-action@v6
+        with:
+          context: ./vote  # Dockerfile in repo-subfolder
+          push: true
+          tags: ${{ steps.docker_meta.outputs.tags }}
+          labels: ${{ steps.docker_meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          # comma seperated list of what OS and architechtures to build for (in parallel)
+          # default is linux/amd64 (the OS of the runner) but you can add more
+          # adding linux/arm64 is recommended for Apple Silicon, Raspberry Pi, AWS Graviton, etc.
+          # linux/arm/v7 is for 32-bit ARM devices like Raspberry Pi 2/3
+          platforms: linux/amd64,linux/arm64,linux/arm/v7
+        # If PR, put image tags in the PR comments
+        # from https://github.com/marketplace/actions/create-or-update-comment
+      - name: Find comment for image tags
+        uses: peter-evans/find-comment@v3
+        if: github.event_name == 'pull_request'
+        id: fc
+        with:
+          issue-number: ${{ github.event.pull_request.number }}
+          comment-author: 'github-actions[bot]'
+          body-includes: Docker image tag(s) pushed
+        # If PR, put image tags in the PR comments
+      - name: Create or update comment for image tags
+        uses: peter-evans/create-or-update-comment@v4
+        if: github.event_name == 'pull_request'
+        with:
+          comment-id: ${{ steps.fc.outputs.comment-id }}
+          issue-number: ${{ github.event.pull_request.number }}
+          body: |
+            Docker image tag(s) pushed:
+            ```text
+            ${{ steps.docker_meta.outputs.tags }}
+            ```
+
+            Labels added to images:
+            ```text
+            ${{ steps.docker_meta.outputs.labels }}
+            ```
+          edit-mode: replace
+
+
+# worker image - FIRST JOB #######################################################################   
+  build-test-image-worker-image:
+    if: true # run job true/false
+    name: Worker image - Build testimage
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read # for actions/checkout to fetch code
+      pull-requests: write # needed to create and update comments in PRs
+    steps:
+      - name: Set up git repo
+        uses: actions/checkout@v4
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      # new step to share image between different github runners (jobs)
+      - name: Build and export
+        uses: docker/build-push-action@v6
+        with:
+          context: ./worker  # Dockerfile in repo-subfolder
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          platforms: linux/amd64
+          tags: testimage-worker-${{ github.run_id }}:latest
+          outputs: type=docker, dest=/tmp/testimage-worker-${{ github.run_id }}.tar  # assures unique image of run id
+      # new step to share image between different github runners (jobs)
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: testimage-worker-${{ github.run_id }} # assures unique image of run id
+          path: /tmp/testimage-worker-${{ github.run_id }}.tar  # assures unique image of run id
+
+# worker image - NEXT JOB #######################################################################   
+  test-unit-worker-image:
+    name: Worker image - Unit tests in Docker
+    if: false # skipped as image requires db, should use docker compose to perform testing
+    needs: [build-test-image-worker-image]
+    runs-on: ubuntu-latest
+    steps:
+      # new step to share image between different github runners (jobs)
+      - name: Download artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: testimage-worker-${{ github.run_id }}  # assures unique image of run id
+          path: /tmp
+      # new step to share image between different github runners (jobs)
+      - name: Load image
+        run: |
+          docker load --input /tmp/testimage-worker-${{ github.run_id }}.tar
+          docker image ls -a
+      # for simple tests (npm test, etc.) just run a local image in docker
+      - name: Unit Testing in Docker
+        run: docker run --rm testimage-worker-${{ github.run_id }} echo "run test commands here"
+
+# worker image - NEXT JOB #######################################################################   
+  scan-image-worker-image:
+    name: Worker image - Scan image with Trivy
+    needs: [build-test-image-worker-image]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read # for actions/checkout to fetch code
+      security-events: write # for uploading SARIF results
+    steps:
+      - name: Checkout git repo
+        uses: actions/checkout@v4
+      # new step to share image between different github runners (jobs)
+      - name: Download artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: testimage-worker-${{ github.run_id }}  # assures unique image of run id
+          path: /tmp
+      # new step to share image between different github runners (jobs)
+      - name: Load image
+        run: |
+          docker load --input /tmp/testimage-worker-${{ github.run_id }}.tar
+          docker image ls -a
+      - name: Run Trivy for all CVEs (non-blocking)
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: testimage-worker-${{ github.run_id }}  # assures unique image of run id
+          exit-code: 0
+          format: table
+      - name: Run Trivy for HIGH,CRITICAL CVEs and report (non-block)
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: testimage-worker-${{ github.run_id }}
+          exit-code: 0 # 1 for block, image has many CVEs so skip for now
+          ignore-unfixed: true
+          vuln-type: 'os,library'
+          severity: 'HIGH,CRITICAL'
+          format: 'sarif'
+          output: 'trivy-results-image-worker.sarif'
+      - name: Upload Trivy scan results to GitHub Security tab
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: 'trivy-results-image-worker.sarif'
+
+# worker image - NEXT JOB #######################################################################   
+  test-integration-worker-image:
+    name: Worker image - Integration tests in Docker
+    needs: [build-test-image-worker-image, test-unit-worker-image]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read # for actions/checkout to fetch code
+    steps:
+      - name: Checkout git repo
+        uses: actions/checkout@v4
+      # new step to share image between different github runners (jobs)
+      - name: Download artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: testimage-worker-${{ github.run_id }}  # assures unique image of run id
+          path: /tmp
+      # new step to share image between different github runners (jobs)
+      - name: Load image
+        run: |
+          docker load --input /tmp/testimage-worker-${{ github.run_id }}.tar
+          docker image ls -a
+      - name: Test healthcheck in Docker Compose
+        # for more advanced tests, use docker compose with `depends_on`
+          # NOTE: GHA and other CIs can also run dependency containers on their own
+          # GHA `services:` can do this if you're trying to avoid docker compose
+        # different than other images as workerimage is a .NET image
+        run: |
+          export TESTING_IMAGE="testimage-worker-${{ github.run_id }}"
+          docker compose -f docker-compose.test-worker.yml up -d # start dependencies
+          docker compose -f docker-compose.test-worker.yml run --rm test-worker # run test
+          docker compose -f docker-compose.test-worker.yml down  # clean up
+
+# worker image - NEXT JOB #######################################################################   
+  build-final-image-worker-image:
+    name: Worker image - Build and push final image
+    needs: [build-test-image-worker-image, test-unit-worker-image, test-integration-worker-image, scan-image-worker-image]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read # for actions/checkout to fetch code
+      pull-requests: write # needed to create and update comments in PRs
+    steps:
+      - name: Set up git repo
+        uses: actions/checkout@v4
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      - name: Docker Metadata for Final Image Build  # renewed name
+        id: docker_meta
+        uses: docker/metadata-action@v5
+        with:
+          images: mihransimonian/udemy-dockermastery-assignment-github-actions-worker
+          flavor: |
+            latest=false
+          tags: |
+            type=raw,value=${{env.final_image_tag}}
+            type=raw,value=latest,enable=${{ endsWith(github.ref, github.event.repository.default_branch) }}
+            type=ref,event=pr
+            type=ref,event=branch
+            type=semver,pattern={{version}}
+      - name: Docker Build and Push to Docker Hub # renewed name
+        uses: docker/build-push-action@v6
+        with:
+          context: ./worker  # Dockerfile in repo-subfolder
           push: true
           tags: ${{ steps.docker_meta.outputs.tags }}
           labels: ${{ steps.docker_meta.outputs.labels }}
