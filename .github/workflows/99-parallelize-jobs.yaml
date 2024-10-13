@@ -49,19 +49,20 @@ jobs:
 
 
       # new step to share image between different github runners (jobs)
-      - name: Build and export to Docker
+      - name: Build and export
         uses: docker/build-push-action@v6
         with:
           context: ./result  # Dockerfile in repo-subfolder
           cache-from: type=gha
           cache-to: type=gha,mode=max
           platforms: linux/amd64
+          tags: testimage-result-${{ github.run_id }}:latest
           outputs: type=docker, dest=/tmp/testimage_result_${{ github.run_id }}.tar  # assures unique image of run id
       # new step to share image between different github runners (jobs)
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: testimage-result:${{ github.run_id }}  # assures unique image of run id
+          name: testimage-result-${{ github.run_id }} # assures unique image of run id
           path: /tmp/testimage_result_${{ github.run_id }}.tar  # assures unique image of run id
 
 # NEXT JOB #######################################################################   
@@ -74,7 +75,7 @@ jobs:
       - name: Download artifact
         uses: actions/download-artifact@v4
         with:
-          name: testimage-result:${{ github.run_id }}  # assures unique image of run id
+          name: testimage-result-${{ github.run_id }}  # assures unique image of run id
           path: /tmp
       # new step to share image between different github runners (jobs)
       - name: Load image
@@ -83,7 +84,7 @@ jobs:
           docker image ls -a
       # for simple tests (npm test, etc.) just run a local image in docker
       - name: Unit Testing in Docker
-        run: docker run --rm testimage-result:${{ github.run_id }} echo "run test commands here"
+        run: docker run --rm testimage-result-${{ github.run_id }} echo "run test commands here"
 
 # NEXT JOB #######################################################################   
   scan-image-result-image:
@@ -100,7 +101,7 @@ jobs:
       - name: Download artifact
         uses: actions/download-artifact@v4
         with:
-          name: testimage-result:${{ github.run_id }}  # assures unique image of run id
+          name: testimage-result-${{ github.run_id }}  # assures unique image of run id
           path: /tmp
       # new step to share image between different github runners (jobs)
       - name: Load image
@@ -110,13 +111,13 @@ jobs:
       - name: Run Trivy for all CVEs (non-blocking)
         uses: aquasecurity/trivy-action@master
         with:
-          image-ref: testimage-result:${{ github.run_id }}  # assures unique image of run id
+          image-ref: testimage-result-${{ github.run_id }}  # assures unique image of run id
           exit-code: 0
           format: table
       - name: Run Trivy for HIGH,CRITICAL CVEs and report (non-block)
         uses: aquasecurity/trivy-action@master
         with:
-          image-ref: testimage-result:${{ github.run_id }}
+          image-ref: testimage-result-${{ github.run_id }}
           exit-code: 0 # 1 for block, image has many CVEs so skip for now
           ignore-unfixed: true
           vuln-type: 'os,library'
@@ -143,7 +144,7 @@ jobs:
       - name: Download artifact
         uses: actions/download-artifact@v4
         with:
-          name: testimage-result:${{ github.run_id }}  # assures unique image of run id
+          name: testimage-result-${{ github.run_id }}  # assures unique image of run id
           path: /tmp
       # new step to share image between different github runners (jobs)
       - name: Load image
@@ -155,7 +156,7 @@ jobs:
           # NOTE: GHA and other CIs can also run dependency containers on their own
           # GHA `services:` can do this if you're trying to avoid docker compose
         run: |
-          export TESTING_IMAGE="testimage-result:${{ github.run_id }}"
+          export TESTING_IMAGE="testimage-result-${{ github.run_id }}"
           docker compose -f docker-compose.test-result.yml up --exit-code-from test-result
 
 # NEXT JOB #######################################################################   
