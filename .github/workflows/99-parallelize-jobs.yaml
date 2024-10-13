@@ -584,7 +584,7 @@ jobs:
         needs.build-test-image-worker-image.result == 'success' &&
         needs.test-unit-worker-image == 'skipped' &&
         needs.test-integration-worker-image == 'success' &&
-        needs.scan-image-worker-image == 'success' &&
+        needs.scan-image-worker-image == 'success'
       )
     runs-on: ubuntu-latest
     permissions:
