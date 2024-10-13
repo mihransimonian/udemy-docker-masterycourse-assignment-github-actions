@@ -1,6 +1,8 @@
 ---
 name: 99 Parallelize Jobs
 # steps from file 09-add-integration-test.yaml seperated in parallel jobs
+# new steps to share image between different github runners (jobs);
+# https://docs.docker.com/build/ci/github-actions/share-image-jobs/
 
 on:
   push:
@@ -27,22 +29,40 @@ jobs:
         uses: docker/setup-qemu-action@v3
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
-      - name: Login to Docker Hub
-        uses: docker/login-action@v3
-        with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      # - name: Login to Docker Hub
+      #   uses: docker/login-action@v3
+      #   with:
+      #     username: ${{ secrets.DOCKERHUB_USERNAME }}
+      #     password: ${{ secrets.DOCKERHUB_TOKEN }}
+      # - name: Build and export to Docker
+      #   uses: docker/build-push-action@v6
+      #   with:
+      #     context: ./result  # added folder of Dockerfile in repo
+      #     push: false
+      #     load: true # Export to Docker Engine rather than pushing to a registry
+      #     tags: ${{ github.run_id }}  # assures unique image of run id
+      #     # target: test
+      #     cache-from: type=gha
+      #     cache-to: type=gha,mode=max
+      #     platforms: linux/amd64
+
+
+      # new step to share image between different github runners (jobs)
       - name: Build and export to Docker
         uses: docker/build-push-action@v6
         with:
-          context: ./result  # added folder of Dockerfile in repo
-          push: false
-          load: true # Export to Docker Engine rather than pushing to a registry
-          tags: ${{ github.run_id }}  # assures unique image of run id
-          # target: test
+          context: ./result  # Dockerfile in repo-subfolder
           cache-from: type=gha
           cache-to: type=gha,mode=max
           platforms: linux/amd64
+          outputs: type=docker, dest=/tmp/testimage_result_${{ github.run_id }}.tar  # assures unique image of run id
+      # new step to share image between different github runners (jobs)
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: testimage-result:${{ github.run_id }}  # assures unique image of run id
+          path: /tmp/testimage_result_${{ github.run_id }}.tar  # assures unique image of run id
 
 # NEXT JOB #######################################################################   
   test-unit-result-image:
@@ -50,9 +70,20 @@ jobs:
     needs: [build-test-image-result-image]
     runs-on: ubuntu-latest
     steps:
+      # new step to share image between different github runners (jobs)
+      - name: Download artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: testimage-result:${{ github.run_id }}  # assures unique image of run id
+          path: /tmp
+      # new step to share image between different github runners (jobs)
+      - name: Load image
+        run: |
+          docker load --input /tmp/testimage_result_${{ github.run_id }}.tar
+          docker image ls -a
       # for simple tests (npm test, etc.) just run a local image in docker
       - name: Unit Testing in Docker
-        run: docker run --rm ${{ github.run_id }} echo "run test commands here"
+        run: docker run --rm testimage-result:${{ github.run_id }} echo "run test commands here"
 
 # NEXT JOB #######################################################################   
   scan-image-result-image:
@@ -65,16 +96,27 @@ jobs:
     steps:
       - name: Checkout git repo
         uses: actions/checkout@v4
+      # new step to share image between different github runners (jobs)
+      - name: Download artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: testimage-result:${{ github.run_id }}  # assures unique image of run id
+          path: /tmp
+      # new step to share image between different github runners (jobs)
+      - name: Load image
+        run: |
+          docker load --input /tmp/testimage_result_${{ github.run_id }}.tar
+          docker image ls -a
       - name: Run Trivy for all CVEs (non-blocking)
         uses: aquasecurity/trivy-action@master
         with:
-          image-ref: ${{ github.run_id }}  # assures unique image of run id
+          image-ref: testimage-result:${{ github.run_id }}  # assures unique image of run id
           exit-code: 0
           format: table
       - name: Run Trivy for HIGH,CRITICAL CVEs and report (non-block)
         uses: aquasecurity/trivy-action@master
         with:
-          image-ref: ${{ github.run_id }}
+          image-ref: testimage-result:${{ github.run_id }}
           exit-code: 0 # 1 for block, image has many CVEs so skip for now
           ignore-unfixed: true
           vuln-type: 'os,library'
@@ -97,12 +139,23 @@ jobs:
     steps:
       - name: Checkout git repo
         uses: actions/checkout@v4
+      # new step to share image between different github runners (jobs)
+      - name: Download artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: testimage-result:${{ github.run_id }}  # assures unique image of run id
+          path: /tmp
+      # new step to share image between different github runners (jobs)
+      - name: Load image
+        run: |
+          docker load --input /tmp/testimage_result_${{ github.run_id }}.tar
+          docker image ls -a
       - name: Test healthcheck in Docker Compose
         # for more advanced tests, use docker compose with `depends_on`
           # NOTE: GHA and other CIs can also run dependency containers on their own
           # GHA `services:` can do this if you're trying to avoid docker compose
         run: |
-          export TESTING_IMAGE="${{ github.run_id }}"
+          export TESTING_IMAGE="testimage-result:${{ github.run_id }}"
           docker compose -f docker-compose.test-result.yml up --exit-code-from test-result
 
 # NEXT JOB #######################################################################   
