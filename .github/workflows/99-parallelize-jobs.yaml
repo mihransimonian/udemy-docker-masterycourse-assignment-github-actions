@@ -49,7 +49,7 @@ jobs:
 # result image - NEXT JOB #######################################################################   
   test-unit-result-image:
     name: Result image - Unit tests in Docker
-    needs: [build-test-image-result-image]
+    needs: build-test-image-result-image
     runs-on: ubuntu-latest
     steps:
       # new step to share image between different github runners (jobs)
@@ -70,7 +70,7 @@ jobs:
 # result image - NEXT JOB #######################################################################   
   scan-image-result-image:
     name: Result image - Scan image with Trivy
-    needs: [build-test-image-result-image]
+    needs: build-test-image-result-image
     runs-on: ubuntu-latest
     permissions:
       contents: read # for actions/checkout to fetch code
@@ -114,7 +114,9 @@ jobs:
 # result image - NEXT JOB #######################################################################   
   test-integration-result-image:
     name: Result image - Integration tests in Docker
-    needs: [build-test-image-result-image, test-unit-result-image]
+    needs:
+      - build-test-image-result-image
+      - test-unit-result-image
     runs-on: ubuntu-latest
     permissions:
       contents: read # for actions/checkout to fetch code
@@ -143,7 +145,11 @@ jobs:
 # result image - NEXT JOB #######################################################################   
   build-final-image-result-image:
     name: Result image - Build and push final image
-    needs: [build-test-image-result-image, test-unit-result-image, test-integration-result-image, scan-image-result-image]
+    needs:
+      - build-test-image-result-image
+      - test-unit-result-image
+      - test-integration-result-image
+      - scan-image-result-image
     runs-on: ubuntu-latest
     permissions:
       contents: read # for actions/checkout to fetch code
@@ -252,7 +258,7 @@ jobs:
 # vote image - NEXT JOB #######################################################################   
   test-unit-vote-image:
     name: Vote image - Unit tests in Docker
-    needs: [build-test-image-vote-image]
+    needs: build-test-image-vote-image
     runs-on: ubuntu-latest
     steps:
       # new step to share image between different github runners (jobs)
@@ -273,7 +279,7 @@ jobs:
 # vote image - NEXT JOB #######################################################################   
   scan-image-vote-image:
     name: Vote image - Scan image with Trivy
-    needs: [build-test-image-vote-image]
+    needs: build-test-image-vote-image
     runs-on: ubuntu-latest
     permissions:
       contents: read # for actions/checkout to fetch code
@@ -317,7 +323,9 @@ jobs:
 # vote image - NEXT JOB #######################################################################   
   test-integration-vote-image:
     name: Vote image - Integration tests in Docker
-    needs: [build-test-image-vote-image, test-unit-vote-image]
+    needs:
+      - build-test-image-vote-image
+      - test-unit-vote-image
     runs-on: ubuntu-latest
     permissions:
       contents: read # for actions/checkout to fetch code
@@ -346,7 +354,11 @@ jobs:
 # vote image - NEXT JOB #######################################################################   
   build-final-image-vote-image:
     name: Vote image - Build and push final image
-    needs: [build-test-image-vote-image, test-unit-vote-image, test-integration-vote-image, scan-image-vote-image]
+    needs: 
+      - build-test-image-vote-image
+      - test-unit-vote-image
+      - test-integration-vote-image
+      - scan-image-vote-image
     runs-on: ubuntu-latest
     permissions:
       contents: read # for actions/checkout to fetch code
@@ -456,7 +468,7 @@ jobs:
   test-unit-worker-image:
     name: Worker image - Unit tests in Docker
     if: false # skipped as image requires db, should use docker compose to perform testing
-    needs: [build-test-image-worker-image]
+    needs: build-test-image-worker-image
     runs-on: ubuntu-latest
     steps:
       # new step to share image between different github runners (jobs)
@@ -477,7 +489,7 @@ jobs:
 # worker image - NEXT JOB #######################################################################   
   scan-image-worker-image:
     name: Worker image - Scan image with Trivy
-    needs: [build-test-image-worker-image]
+    needs: build-test-image-worker-image
     runs-on: ubuntu-latest
     permissions:
       contents: read # for actions/checkout to fetch code
@@ -521,8 +533,15 @@ jobs:
 # worker image - NEXT JOB #######################################################################   
   test-integration-worker-image:
     name: Worker image - Integration tests in Docker
-    needs: [build-test-image-worker-image, test-unit-worker-image]
-    if: (test-unit-worker-image == 'skipped')  # unit tests are skipped for worker image
+    needs:
+      - build-test-image-worker-image
+      - test-unit-worker-image
+    # unit tests are skipped for worker image
+    if: | 
+      always() || (
+        needs.build-test-image-worker-image.result == 'success' &&
+        needs.test-unit-worker-image == 'skipped'
+      )
     runs-on: ubuntu-latest
     permissions:
       contents: read # for actions/checkout to fetch code
@@ -554,8 +573,19 @@ jobs:
 # worker image - NEXT JOB #######################################################################   
   build-final-image-worker-image:
     name: Worker image - Build and push final image
-    needs: [build-test-image-worker-image, test-unit-worker-image, test-integration-worker-image, scan-image-worker-image]
-    if: (test-unit-worker-image == 'skipped')  # unit tests are skipped for worker image
+    needs: 
+      - build-test-image-worker-image
+      - test-unit-worker-image
+      - test-integration-worker-image
+      - scan-image-worker-image
+    # unit tests are skipped for worker image
+    if: |
+      always() || (
+        needs.build-test-image-worker-image.result == 'success' &&
+        needs.test-unit-worker-image == 'skipped' &&
+        test-integration-worker-image == 'success' &&
+        scan-image-worker-image == 'success' &&
+      )
     runs-on: ubuntu-latest
     permissions:
       contents: read # for actions/checkout to fetch code
