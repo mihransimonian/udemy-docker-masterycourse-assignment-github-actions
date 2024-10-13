@@ -17,7 +17,7 @@ jobs:
 # FIRST JOB #######################################################################   
   build-test-image-result-image:
     if: true # run job true/false
-    name: Build Image Result
+    name: Result image - Build testimage
     runs-on: ubuntu-latest
     permissions:
       contents: read # for actions/checkout to fetch code
@@ -29,25 +29,6 @@ jobs:
         uses: docker/setup-qemu-action@v3
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
-
-      # - name: Login to Docker Hub
-      #   uses: docker/login-action@v3
-      #   with:
-      #     username: ${{ secrets.DOCKERHUB_USERNAME }}
-      #     password: ${{ secrets.DOCKERHUB_TOKEN }}
-      # - name: Build and export to Docker
-      #   uses: docker/build-push-action@v6
-      #   with:
-      #     context: ./result  # added folder of Dockerfile in repo
-      #     push: false
-      #     load: true # Export to Docker Engine rather than pushing to a registry
-      #     tags: ${{ github.run_id }}  # assures unique image of run id
-      #     # target: test
-      #     cache-from: type=gha
-      #     cache-to: type=gha,mode=max
-      #     platforms: linux/amd64
-
-
       # new step to share image between different github runners (jobs)
       - name: Build and export
         uses: docker/build-push-action@v6
@@ -67,7 +48,7 @@ jobs:
 
 # NEXT JOB #######################################################################   
   test-unit-result-image:
-    name: Unit tests in Docker
+    name: Result image - Unit tests in Docker
     needs: [build-test-image-result-image]
     runs-on: ubuntu-latest
     steps:
@@ -88,7 +69,7 @@ jobs:
 
 # NEXT JOB #######################################################################   
   scan-image-result-image:
-    name: Scan Image with Trivy
+    name: Result image - Scan image with Trivy
     needs: [build-test-image-result-image]
     runs-on: ubuntu-latest
     permissions:
@@ -132,7 +113,7 @@ jobs:
 
 # NEXT JOB #######################################################################   
   test-integration-result-image:
-    name: Integration tests in Docker
+    name: Result image - Integration tests in Docker
     needs: [build-test-image-result-image, test-unit-result-image]
     runs-on: ubuntu-latest
     permissions:
@@ -161,7 +142,7 @@ jobs:
 
 # NEXT JOB #######################################################################   
   build-final-image-result-image:
-    name: Build Final Image
+    name: Result image - Build and push final image
     needs: [build-test-image-result-image, test-unit-result-image, test-integration-result-image, scan-image-result-image]
     runs-on: ubuntu-latest
     permissions:
