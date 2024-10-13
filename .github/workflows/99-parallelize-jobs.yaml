@@ -466,7 +466,7 @@ jobs:
 
 # worker image - NEXT JOB #######################################################################   
   test-unit-worker-image:
-    name: Worker image - Unit tests in Docker
+    name: Worker image - Unit tests in Docker (skip and use intergration testing)
     if: false # skipped as image requires db, should use docker compose to perform testing
     needs: build-test-image-worker-image
     runs-on: ubuntu-latest
