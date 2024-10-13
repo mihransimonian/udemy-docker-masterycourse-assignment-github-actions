@@ -583,8 +583,8 @@ jobs:
       always() || (
         needs.build-test-image-worker-image.result == 'success' &&
         needs.test-unit-worker-image == 'skipped' &&
-        test-integration-worker-image == 'success' &&
-        scan-image-worker-image == 'success' &&
+        needs.test-integration-worker-image == 'success' &&
+        needs.scan-image-worker-image == 'success' &&
       )
     runs-on: ubuntu-latest
     permissions:
