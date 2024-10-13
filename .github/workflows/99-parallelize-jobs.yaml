@@ -522,6 +522,7 @@ jobs:
   test-integration-worker-image:
     name: Worker image - Integration tests in Docker
     needs: [build-test-image-worker-image, test-unit-worker-image]
+    if: (test-unit-worker-image == 'skipped')  # unit tests are skipped for worker image
     runs-on: ubuntu-latest
     permissions:
       contents: read # for actions/checkout to fetch code
@@ -554,6 +555,7 @@ jobs:
   build-final-image-worker-image:
     name: Worker image - Build and push final image
     needs: [build-test-image-worker-image, test-unit-worker-image, test-integration-worker-image, scan-image-worker-image]
+    if: (test-unit-worker-image == 'skipped')  # unit tests are skipped for worker image
     runs-on: ubuntu-latest
     permissions:
       contents: read # for actions/checkout to fetch code
