@@ -11,16 +11,15 @@ on:
 env:
   final_image_tag: 99
 
-
 jobs:
+# FIRST JOB #######################################################################   
   build-test-image-result-image:
     if: true # run job true/false
     name: Build Image Result
     runs-on: ubuntu-latest
     permissions:
-      pull-requests: write # needed to create and update comments in PRs
       contents: read # for actions/checkout to fetch code
-      security-events: write # for github/codeql-action/upload-sarif to upload SARIF results
+      pull-requests: write # needed to create and update comments in PRs
     steps:
       - name: Set up git repo
         uses: actions/checkout@v4
@@ -45,7 +44,6 @@ jobs:
           cache-to: type=gha,mode=max
           platforms: linux/amd64
 
-
 # NEXT JOB #######################################################################   
   test-unit-result-image:
     name: Unit tests in Docker
@@ -57,30 +55,13 @@ jobs:
         run: docker run --rm ${{ github.run_id }} echo "run test commands here"
 
 # NEXT JOB #######################################################################   
-  test-integration-result-image:
-    name: Integration tests in Docker
-    needs: [build-test-image-result-image]
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout git repo
-        uses: actions/checkout@v4
-      - name: Test healthcheck in Docker Compose
-        # for more advanced tests, use docker compose with `depends_on`
-          # NOTE: GHA and other CIs can also run dependency containers on their own
-          # GHA `services:` can do this if you're trying to avoid docker compose
-        run: |
-          export TESTING_IMAGE="${{ github.run_id }}"
-          docker compose -f docker-compose.test-result.yml up --exit-code-from test-result
-
-
-# NEXT JOB #######################################################################   
   scan-image-result-image:
     name: Scan Image with Trivy
     needs: [build-test-image-result-image]
     runs-on: ubuntu-latest
     permissions:
       contents: read # for actions/checkout to fetch code
-      security-events: write # for github/codeql-action/upload-sarif to upload SARIF results
+      security-events: write # for uploading SARIF results
     steps:
       - name: Checkout git repo
         uses: actions/checkout@v4
@@ -106,15 +87,35 @@ jobs:
         with:
           sarif_file: 'trivy-results-image-result.sarif'
 
+# NEXT JOB #######################################################################   
+  test-integration-result-image:
+    name: Integration tests in Docker
+    needs: [build-test-image-result-image, test-unit-result-image]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read # for actions/checkout to fetch code
+    steps:
+      - name: Checkout git repo
+        uses: actions/checkout@v4
+      - name: Test healthcheck in Docker Compose
+        # for more advanced tests, use docker compose with `depends_on`
+          # NOTE: GHA and other CIs can also run dependency containers on their own
+          # GHA `services:` can do this if you're trying to avoid docker compose
+        run: |
+          export TESTING_IMAGE="${{ github.run_id }}"
+          docker compose -f docker-compose.test-result.yml up --exit-code-from test-result
 
 # NEXT JOB #######################################################################   
   build-final-image-result-image:
     name: Build Final Image
     needs: [build-test-image-result-image, test-unit-result-image, test-integration-result-image, scan-image-result-image]
     runs-on: ubuntu-latest
-
     permissions:
+      contents: read # for actions/checkout to fetch code
       pull-requests: write # needed to create and update comments in PRs
+    steps:
+      - name: Set up git repo
+        uses: actions/checkout@v4
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
       - name: Set up Docker Buildx
