@@ -1,4 +1,4 @@
-# Mihran's version of the repository
+# Goal of repository
 
 * This is a repository as part [of my Udemy course](https://github.com/mihransimonian/udemy-docker-mastery-with-k8s/blob/master/README.MD#udemy-dockerkubernetes-course-docker-mastery-with-kubernetes-swarm-from-a-docker-captain)
 * This is a forked repository where I added Github Actions, therefore defaulting to my branch
